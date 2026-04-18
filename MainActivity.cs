@@ -3,88 +3,74 @@ using Android.OS;
 using Android.Widget;
 using Android.Graphics;
 using Android.Views;
-using Android.Text;
-using Android.Text.Method;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace MathematicaConsole;
 
-[Activity(Label = "Mathematica Console", MainLauncher = true, Theme = "@android:style/Theme.Holo.Light.NoActionBar")]
+[Activity(Label = "Mathematica Console", MainLauncher = true)]
 public class MainActivity : Activity
 {
     private EditText inputField;
-    private LinearLayout consoleLayout;
-    private ScrollView scrollView;
+    private TextView outputArea;
+    private LinearLayout layout;
+    private int counter = 1;
     private List<string> history = new List<string>();
     private int historyIndex = 0;
-    private int lineCounter = 1;
     
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         
-        // Root layout
-        var rootLayout = new LinearLayout(this)
+        layout = new LinearLayout(this)
         {
             Orientation = Orientation.Vertical,
-            LayoutParameters = new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MatchParent,
-                ViewGroup.LayoutParams.MatchParent)
+            SetBackgroundColor = Color.ParseColor("#1e1e1e")
         };
-        rootLayout.SetBackgroundColor(Color.ParseColor("#1e1e1e"));
         
-        // Title Bar
-        var titleBar = new TextView(this)
+        var title = new TextView(this)
         {
-            Text = "  Mathematica Console",
-            TextSize = 20,
-            Gravity = GravityFlags.CenterVertical,
+            Text = "Mathematica Console",
+            TextSize = 24,
+            Gravity = GravityFlags.Center,
             SetBackgroundColor = Color.ParseColor("#2d2d2d")
         };
-        titleBar.SetTextColor(Color.ParseColor("#4ec9b0"));
-        titleBar.SetPadding(20, 20, 20, 20);
+        title.SetTextColor(Color.ParseColor("#4ec9b0"));
+        title.SetPadding(0, 30, 0, 30);
         
-        // Console Output (scrollable)
-        scrollView = new ScrollView(this);
-        consoleLayout = new LinearLayout(this)
+        outputArea = new TextView(this)
         {
-            Orientation = Orientation.Vertical
+            TextSize = 16,
+            Typeface = Typeface.Create("monospace", TypefaceStyle.Normal)
         };
-        consoleLayout.SetPadding(30, 20, 30, 20);
-        scrollView.AddView(consoleLayout);
+        outputArea.SetTextColor(Color.White);
+        outputArea.SetPadding(30, 30, 30, 30);
         
-        // Welcome Header
-        AddConsoleOutput("========================================", "#4ec9b0", 14, true);
-        AddConsoleOutput("    Mathematica Console v1.0", "#4ec9b0", 18, true);
-        AddConsoleOutput("========================================", "#4ec9b0", 14, true);
-        AddConsoleOutput("", "#ffffff", 12);
-        AddConsoleOutput("Supported operations:", "#888888", 14);
-        AddConsoleOutput("  • Basic: + - * / ^", "#ce9178", 13);
-        AddConsoleOutput("  • Functions: Sin, Cos, Tan, Sqrt, Log", "#ce9178", 13);
-        AddConsoleOutput("  • Constants: Pi, E", "#ce9178", 13);
-        AddConsoleOutput("  • Calculus: Integrate[f, x], D[f, x]", "#ce9178", 13);
-        AddConsoleOutput("  • Algebra: Expand, Factor, Simplify", "#ce9178", 13);
-        AddConsoleOutput("  • Matrices: MatrixForm[{{a,b},{c,d}}]", "#ce9178", 13);
-        AddConsoleOutput("", "#ffffff", 12);
-        AddConsoleOutput("Type expressions below. Press Enter to evaluate.", "#4ec9b0", 13);
-        AddConsoleOutput("========================================", "#4ec9b0", 14);
-        AddConsoleOutput("", "#ffffff", 12);
+        outputArea.Text = "========================================\n";
+        outputArea.Text += "    Mathematica Console v1.0\n";
+        outputArea.Text += "========================================\n\n";
+        outputArea.Text += "Examples:\n";
+        outputArea.Text += "  2 + 2\n";
+        outputArea.Text += "  10 / 3\n";
+        outputArea.Text += "  (5+3)*2\n";
+        outputArea.Text += "  2^3\n";
+        outputArea.Text += "  Sin[30]\n";
+        outputArea.Text += "  Sqrt[16]\n";
+        outputArea.Text += "  Log[100]\n\n";
+        outputArea.Text += "========================================\n";
         
-        // Input Area
         var inputLayout = new LinearLayout(this)
         {
             Orientation = Orientation.Horizontal,
             SetBackgroundColor = Color.ParseColor("#252526")
         };
-        inputLayout.SetPadding(20, 15, 20, 15);
+        inputLayout.SetPadding(20, 20, 20, 20);
         
         var prompt = new TextView(this)
         {
-            Text = $"In[{lineCounter}]:= ",
+            Text = $"[{counter}]> ",
             TextSize = 16,
             Typeface = Typeface.Create("monospace", TypefaceStyle.Bold)
         };
@@ -93,8 +79,7 @@ public class MainActivity : Activity
         inputField = new EditText(this)
         {
             TextSize = 16,
-            Hint = "Enter mathematical expression...",
-            InputType = Android.Text.InputTypes.TextFlagNoSuggestions,
+            Hint = "Enter expression...",
             Typeface = Typeface.Create("monospace", TypefaceStyle.Normal),
             LayoutParameters = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WrapContent, 1)
         };
@@ -102,95 +87,73 @@ public class MainActivity : Activity
         inputField.SetHintTextColor(Color.ParseColor("#6a6a6a"));
         inputField.SetBackgroundColor(Color.Transparent);
         
-        // Handle Enter key
         inputField.EditorAction += (s, e) => {
             if (e.ActionId == Android.Views.InputMethods.ImeAction.Send)
             {
-                EvaluateInput();
+                Evaluate();
                 e.Handled = true;
             }
         };
         
-        // History navigation
         inputField.KeyPress += (s, e) => {
-            if (e.KeyCode == Keycode.DpadUp)
+            if (e.KeyCode == Keycode.DpadUp && history.Count > 0)
             {
-                if (history.Count > 0 && historyIndex > 0)
-                {
-                    historyIndex--;
-                    inputField.Text = history[historyIndex];
-                    inputField.SetSelection(inputField.Text.Length);
-                }
+                if (historyIndex > 0) historyIndex--;
+                inputField.Text = history[historyIndex];
+                inputField.SetSelection(inputField.Text.Length);
                 e.Handled = true;
             }
-            else if (e.KeyCode == Keycode.DpadDown)
+            else if (e.KeyCode == Keycode.DpadDown && historyIndex < history.Count - 1)
             {
-                if (historyIndex < history.Count - 1)
-                {
-                    historyIndex++;
-                    inputField.Text = history[historyIndex];
-                    inputField.SetSelection(inputField.Text.Length);
-                }
-                else if (historyIndex == history.Count - 1)
-                {
-                    historyIndex = history.Count;
-                    inputField.Text = "";
-                }
+                historyIndex++;
+                inputField.Text = history[historyIndex];
+                inputField.SetSelection(inputField.Text.Length);
                 e.Handled = true;
             }
         };
         
-        var evalButton = new Button(this)
+        var button = new Button(this)
         {
-            Text = "Evaluate",
+            Text = "=",
             SetBackgroundColor = Color.ParseColor("#0e639c")
         };
-        evalButton.SetTextColor(Color.White);
-        evalButton.Click += (s, e) => EvaluateInput();
+        button.SetTextColor(Color.White);
+        button.Click += (s, e) => Evaluate();
         
         inputLayout.AddView(prompt);
         inputLayout.AddView(inputField);
-        inputLayout.AddView(evalButton);
+        inputLayout.AddView(button);
         
-        rootLayout.AddView(titleBar);
-        rootLayout.AddView(scrollView, new LinearLayout.LayoutParams(
+        layout.AddView(title);
+        layout.AddView(outputArea, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MatchParent, 0, 1));
-        rootLayout.AddView(inputLayout);
+        layout.AddView(inputLayout);
         
-        SetContentView(rootLayout);
+        SetContentView(layout);
         inputField.RequestFocus();
     }
     
-    private void EvaluateInput()
+    private void Evaluate()
     {
         string input = inputField.Text?.Trim() ?? "";
         if (string.IsNullOrEmpty(input)) return;
         
-        // Add to history
         history.Add(input);
         historyIndex = history.Count;
         
         // Show input
-        AddConsoleOutput($"In[{lineCounter}]:= {input}", "#4ec9b0", 16);
+        outputArea.Text = $"\n[{counter}]> {input}\n" + outputArea.Text;
         
         // Evaluate
         string result = MathematicaEvaluate(input);
-        AddConsoleOutput($"Out[{lineCounter}]= {result}", "#ce9178", 16);
-        AddConsoleOutput("", "#ffffff", 12);
+        outputArea.Text = $"[{counter}] = {result}\n" + outputArea.Text;
         
-        // Clear input and increment counter
         inputField.Text = "";
-        lineCounter++;
+        counter++;
         
-        // Update prompt for next line
+        // Update prompt
         var prompt = ((LinearLayout)inputField.Parent).GetChildAt(0) as TextView;
-        if (prompt != null)
-        {
-            prompt.Text = $"In[{lineCounter}]:= ";
-        }
-        
-        // Auto-scroll to bottom
-        scrollView.Post(() => scrollView.FullScroll(FocusSearchDirection.Down));
+        if (prompt != null) prompt.Text = $"[{counter}]> ";
     }
     
     private string MathematicaEvaluate(string expr)
@@ -204,12 +167,10 @@ public class MainActivity : Activity
             }
             
             // Constants
-            if (expr == "Pi" || expr == "π")
-                return Math.PI.ToString();
-            if (expr == "E")
-                return Math.E.ToString();
+            if (expr == "Pi") return Math.PI.ToString();
+            if (expr == "E") return Math.E.ToString();
             
-            // Trig functions
+            // Sin, Cos, Tan
             var trigMatch = Regex.Match(expr, @"(Sin|Cos|Tan)\[(\d+(?:\.\d+)?)\]", RegexOptions.IgnoreCase);
             if (trigMatch.Success)
             {
@@ -328,15 +289,15 @@ public class MainActivity : Activity
             var detMatch = Regex.Match(expr, @"Det\[{{(.+),(.+)},{(.+),(.+)}}\]", RegexOptions.IgnoreCase);
             if (detMatch.Success)
             {
-                double a = double.Parse(matMatch.Groups[1].Value);
-                double b = double.Parse(matMatch.Groups[2].Value);
-                double c = double.Parse(matMatch.Groups[3].Value);
-                double d = double.Parse(matMatch.Groups[4].Value);
+                double a = double.Parse(detMatch.Groups[1].Value);
+                double b = double.Parse(detMatch.Groups[2].Value);
+                double c = double.Parse(detMatch.Groups[3].Value);
+                double d = double.Parse(detMatch.Groups[4].Value);
                 double det = a * d - b * c;
                 return $"det = {det}";
             }
             
-            // Default: try arithmetic evaluation
+            // Default
             return EvaluateArithmetic(expr);
         }
         catch (Exception ex)
@@ -359,7 +320,6 @@ public class MainActivity : Activity
                 expr = expr.Replace(match.Value, result.ToString());
             }
             
-            // Evaluate using DataTable
             var table = new DataTable();
             var result = table.Compute(expr, "");
             return $"{expr} = {result}";
@@ -368,18 +328,5 @@ public class MainActivity : Activity
         {
             return $"Could not evaluate: {expr}";
         }
-    }
-    
-    private void AddConsoleOutput(string text, string colorHex, float textSize = 14, bool bold = false)
-    {
-        var textView = new TextView(this)
-        {
-            Text = text,
-            TextSize = textSize,
-            Typeface = Typeface.Create("monospace", bold ? TypefaceStyle.Bold : TypefaceStyle.Normal)
-        };
-        textView.SetTextColor(Color.ParseColor(colorHex));
-        textView.SetPadding(0, 5, 0, 5);
-        consoleLayout.AddView(textView);
     }
 }
