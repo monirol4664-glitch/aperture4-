@@ -11,9 +11,20 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <AndroidKeyStore>False</AndroidKeyStore>
+    <AndroidSigningKeyPass>android</AndroidSigningKeyPass>
+    <AndroidSigningKeyAlias>mykey</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass>android</AndroidSigningStorePass>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="MathNet.Symbolics" Version="0.24.0" />
     <PackageReference Include="Microsoft.Maui.Controls" Version="7.0.101" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AndroidResource Include="Platforms/Android/AndroidManifest.xml" />
   </ItemGroup>
 </Project>
