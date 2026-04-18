@@ -1,9 +1,6 @@
-name: Build Android APK
+name: Build with .NET 9
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build:
@@ -12,25 +9,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup .NET
+    - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'  # Use .NET 8 instead of 9/10
+        dotnet-version: '9.0.x'
     
     - name: Install Android Workload
       run: dotnet workload install android
     
-    - name: Build APK
+    - name: Create and Build
       run: |
         dotnet new android -n MathematicaConsole
         cd MathematicaConsole
-        # Fix the Android version mismatch
-        sed -i 's/<TargetFramework>net[0-9.]*-android/<TargetFramework>net8.0-android33.0/' MathematicaConsole.csproj
-        sed -i 's/<SupportedOSPlatformVersion>[0-9]*/<SupportedOSPlatformVersion>21/' MathematicaConsole.csproj
+        
+        # Update to .NET 9
+        sed -i 's/net[0-9.]*-android/net9.0-android35/' MathematicaConsole.csproj
+        
         dotnet build -c Release
-      
+        
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: MathematicaConsole.apk
-        path: MathematicaConsole/bin/Release/net8.0-android/*.apk
+        path: MathematicaConsole/bin/Release/net9.0-android/*.apk
