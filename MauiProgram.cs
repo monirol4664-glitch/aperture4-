@@ -2,7 +2,7 @@ using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 using Microsoft.Maui.Controls.Hosting;
 
-namespace MathematicaConsole;
+namespace aperture4;
 
 public static class MauiProgram
 {

@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="MathematicaConsole.MainPage"
+             x:Class="aperture4.MainPage"
              BackgroundColor="#1a1a2e"
-             Title="Mathematica Console">
+             Title="Aperture4">
 
     <Grid RowDefinitions="Auto,*,Auto,Auto">
-        <!-- Header -->
+
         <Label Grid.Row="0" 
-               Text="📐 Mathematica Console"
-               FontSize="24"
+               Text="🔷 Aperture4"
+               FontSize="28"
                FontAttributes="Bold"
                TextColor="#eeeeee"
                HorizontalOptions="Center"
                Margin="0,20,0,10"/>
 
-        <!-- Output History -->
         <ScrollView Grid.Row="1" 
                     BackgroundColor="#0f0f1a"
                     Margin="10"
@@ -25,7 +24,6 @@
                          Padding="10"/>
         </ScrollView>
 
-        <!-- Button Grid -->
         <Grid Grid.Row="2" 
               RowDefinitions="Auto,Auto,Auto,Auto,Auto"
               ColumnDefinitions="*,*,*,*,*"
@@ -33,43 +31,37 @@
               RowSpacing="8"
               ColumnSpacing="8">
 
-            <!-- Row 1 -->
-            <Button Text="sin" Grid.Row="0" Grid.Column="0" Clicked="OnButtonClicked" Style="{StaticResource MathButton}"/>
-            <Button Text="cos" Grid.Row="0" Grid.Column="1" Clicked="OnButtonClicked" Style="{StaticResource MathButton}"/>
-            <Button Text="tan" Grid.Row="0" Grid.Column="2" Clicked="OnButtonClicked" Style="{StaticResource MathButton}"/>
-            <Button Text="√" Grid.Row="0" Grid.Column="3" Clicked="OnButtonClicked" Style="{StaticResource MathButton}"/>
-            <Button Text="C" Grid.Row="0" Grid.Column="4" Clicked="OnClearClicked" Style="{StaticResource ClearButton}"/>
+            <Button Text="sin" Grid.Row="0" Grid.Column="0" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#4CAF50" FontSize="16" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="cos" Grid.Row="0" Grid.Column="1" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#4CAF50" FontSize="16" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="tan" Grid.Row="0" Grid.Column="2" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#4CAF50" FontSize="16" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="√" Grid.Row="0" Grid.Column="3" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#4CAF50" FontSize="16" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="C" Grid.Row="0" Grid.Column="4" Clicked="OnClearClicked" BackgroundColor="#4e2a2a" TextColor="#f44336" FontSize="16" CornerRadius="8" HeightRequest="55"/>
 
-            <!-- Row 2 -->
-            <Button Text="7" Grid.Row="1" Grid.Column="0" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="8" Grid.Row="1" Grid.Column="1" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="9" Grid.Row="1" Grid.Column="2" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="÷" Grid.Row="1" Grid.Column="3" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
-            <Button Text="^" Grid.Row="1" Grid.Column="4" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
+            <Button Text="7" Grid.Row="1" Grid.Column="0" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="8" Grid.Row="1" Grid.Column="1" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="9" Grid.Row="1" Grid.Column="2" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="÷" Grid.Row="1" Grid.Column="3" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="^" Grid.Row="1" Grid.Column="4" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
 
-            <!-- Row 3 -->
-            <Button Text="4" Grid.Row="2" Grid.Column="0" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="5" Grid.Row="2" Grid.Column="1" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="6" Grid.Row="2" Grid.Column="2" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="×" Grid.Row="2" Grid.Column="3" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
-            <Button Text="(" Grid.Row="2" Grid.Column="4" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
+            <Button Text="4" Grid.Row="2" Grid.Column="0" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="5" Grid.Row="2" Grid.Column="1" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="6" Grid.Row="2" Grid.Column="2" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="×" Grid.Row="2" Grid.Column="3" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="(" Grid.Row="2" Grid.Column="4" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
 
-            <!-- Row 4 -->
-            <Button Text="1" Grid.Row="3" Grid.Column="0" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="2" Grid.Row="3" Grid.Column="1" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="3" Grid.Row="3" Grid.Column="2" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="−" Grid.Row="3" Grid.Column="3" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
-            <Button Text=")" Grid.Row="3" Grid.Column="4" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
+            <Button Text="1" Grid.Row="3" Grid.Column="0" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="2" Grid.Row="3" Grid.Column="1" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="3" Grid.Row="3" Grid.Column="2" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="−" Grid.Row="3" Grid.Column="3" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text=")" Grid.Row="3" Grid.Column="4" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
 
-            <!-- Row 5 -->
-            <Button Text="0" Grid.Row="4" Grid.Column="0" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="." Grid.Row="4" Grid.Column="1" Clicked="OnButtonClicked" Style="{StaticResource NumberButton}"/>
-            <Button Text="π" Grid.Row="4" Grid.Column="2" Clicked="OnButtonClicked" Style="{StaticResource MathButton}"/>
-            <Button Text="+" Grid.Row="4" Grid.Column="3" Clicked="OnButtonClicked" Style="{StaticResource OperatorButton}"/>
-            <Button Text="=" Grid.Row="4" Grid.Column="4" Clicked="OnEvaluateClicked" Style="{StaticResource EqualButton}"/>
+            <Button Text="0" Grid.Row="4" Grid.Column="0" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="." Grid.Row="4" Grid.Column="1" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#eeeeee" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="π" Grid.Row="4" Grid.Column="2" Clicked="OnButtonClicked" BackgroundColor="#2a2a3e" TextColor="#4CAF50" FontSize="16" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="+" Grid.Row="4" Grid.Column="3" Clicked="OnButtonClicked" BackgroundColor="#3a2a4e" TextColor="#ff9800" FontSize="20" CornerRadius="8" HeightRequest="55"/>
+            <Button Text="=" Grid.Row="4" Grid.Column="4" Clicked="OnEvaluateClicked" BackgroundColor="#2a6e3a" TextColor="#ffffff" FontSize="24" FontAttributes="Bold" CornerRadius="8" HeightRequest="55"/>
         </Grid>
 
-        <!-- Input Field -->
         <Entry Grid.Row="3"
                x:Name="InputEntry"
                Placeholder="Enter expression..."
@@ -81,47 +73,4 @@
                ReturnType="Done"
                Completed="OnEvaluateClicked"/>
     </Grid>
-
-    <ContentPage.Resources>
-        <Style x:Key="MathButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#2a2a3e"/>
-            <Setter Property="TextColor" Value="#4CAF50"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HeightRequest" Value="55"/>
-        </Style>
-        
-        <Style x:Key="NumberButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#2a2a3e"/>
-            <Setter Property="TextColor" Value="#eeeeee"/>
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HeightRequest" Value="55"/>
-        </Style>
-        
-        <Style x:Key="OperatorButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#3a2a4e"/>
-            <Setter Property="TextColor" Value="#ff9800"/>
-            <Setter Property="FontSize" Value="20"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HeightRequest" Value="55"/>
-        </Style>
-        
-        <Style x:Key="ClearButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#4e2a2a"/>
-            <Setter Property="TextColor" Value="#f44336"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HeightRequest" Value="55"/>
-        </Style>
-        
-        <Style x:Key="EqualButton" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="#2a6e3a"/>
-            <Setter Property="TextColor" Value="#ffffff"/>
-            <Setter Property="FontSize" Value="24"/>
-            <Setter Property="FontAttributes" Value="Bold"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HeightRequest" Value="55"/>
-        </Style>
-    </ContentPage.Resources>
 </ContentPage>

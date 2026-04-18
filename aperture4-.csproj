@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0-android</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <ApplicationId>org.aperture4-</ApplicationId>
+    <ApplicationId>org.aperture4.math</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
   </PropertyGroup>

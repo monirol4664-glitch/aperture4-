@@ -2,9 +2,8 @@ using MathNet.Symbolics;
 using MathNet.Numerics;
 using Microsoft.Maui.Controls;
 using System;
-using System.Collections.Generic;
 
-namespace MathematicaConsole;
+namespace aperture4;
 
 public partial class MainPage : ContentPage
 {
@@ -19,7 +18,7 @@ public partial class MainPage : ContentPage
     private void AddWelcomeMessage()
     {
         AddOutput("=", new string('=', 50), "#666666");
-        AddOutput("📐", "Mathematica Console", "#4CAF50", true);
+        AddOutput("🔷", "Aperture4 Ready", "#4CAF50", true);
         AddOutput("=", new string('=', 50), "#666666");
         AddOutput("", "");
         AddOutput("📖", "Examples:", "#ff9800", true);
@@ -27,7 +26,6 @@ public partial class MainPage : ContentPage
         AddOutput("", "  sin(pi/2) = 1");
         AddOutput("", "  sqrt(16) = 4");
         AddOutput("", "  2^3 = 8");
-        AddOutput("", "  log(100, 10) = 2");
         AddOutput("", "");
         AddOutput("✅", "Ready!", "#4CAF50", true);
     }
@@ -37,7 +35,6 @@ public partial class MainPage : ContentPage
         var button = (Button)sender;
         var symbol = button.Text;
         
-        // Map display symbols to math symbols
         symbol = symbol switch
         {
             "÷" => "/",
@@ -58,18 +55,15 @@ public partial class MainPage : ContentPage
         if (string.IsNullOrEmpty(expression))
             return;
         
-        // Show input
         AddOutput("»", expression, "#4CAF50", true);
         
         try
         {
-            // Parse using MathNet.Symbolics
             var expr = Infix.ParseOrUndefined(expression);
             
             if (expr.IsUndefined)
                 throw new Exception("Invalid expression");
             
-            // Evaluate
             var result = Evaluate.Evaluate(null, expr);
             string resultStr = FormatResult(result);
             
@@ -80,7 +74,6 @@ public partial class MainPage : ContentPage
             AddOutput("✗", $"Error: {ex.Message}", "#f44336", true);
         }
         
-        // Clear input
         _currentInput = "";
         InputEntry.Text = "";
     }
@@ -89,11 +82,9 @@ public partial class MainPage : ContentPage
     {
         var realValue = value.RealValue;
         
-        // Handle integers
         if (Math.Abs(realValue - Math.Round(realValue)) < 1e-10)
             return Math.Round(realValue).ToString();
         
-        // Format to reasonable precision
         return realValue.ToString("G8");
     }
     

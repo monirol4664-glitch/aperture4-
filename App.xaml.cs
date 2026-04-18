@@ -1,6 +1,6 @@
 using Microsoft.Maui.Controls;
 
-namespace MathematicaConsole;
+namespace aperture4;
 
 public partial class App : Application
 {
