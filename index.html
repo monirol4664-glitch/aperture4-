@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Aperture</title>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      overflow-x: hidden;
+    }
+    .header-bar {
+      display: flex;
+      align-items: center;
+      background-color: #222;
+      color: #fff;
+      padding: 20px 40px;
+      font-size: 2.5em;
+      letter-spacing: 2px;
+      font-weight: bold;
+      position: relative;
+      z-index: 1001;
+    }
+    .header-bar .nav-dots-btn {
+      margin-right: 20px;
+      margin-left: 0;
+      position: relative;
+      top: 0;
+      left: 0;
+      transform: none;
+      background: transparent;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      height: 40px;
+      width: 40px;
+    }
+    .header-bar .nav-dot {
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      margin: 3px 0;
+      display: block;
+      transition: background 0.2s;
+    }
+    .header-bar .nav-dots-btn:hover .nav-dot {
+      background: #ffcc00;
+    }
+    .header-bar .site-title {
+      flex: 1;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .header-bar .aperture-logo {
+      margin-left: 22px;
+      display: flex;
+      align-items: center;
+      height: 54px;
+    }
+    @media (max-width: 600px) {
+      .header-bar {
+        padding: 15px 10px;
+        font-size: 1.5em;
+      }
+      .header-bar .nav-dots-btn {
+        margin-right: 12px;
+        font-size: 1.2em;
+      }
+      .header-bar .aperture-logo {
+        margin-left: 10px;
+        height: 36px;
+      }
+    }
+
+    .vertical-nav-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background-color: #444;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      z-index: 2002;
+      padding-top: 0;
+      overflow: hidden;
+      transition: width 0.7s cubic-bezier(.4,0,.2,1), box-shadow 0.4s;
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+    }
+    .vertical-nav-container.expanded {
+      width: 210px;
+      padding-top: 70px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.12);
+    }
+    .vertical-nav {
+      opacity: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      margin-top: 0;
+      pointer-events: none;
+      transform: translateX(-35px) scale(0.98);
+      transition:
+        opacity 0.7s cubic-bezier(.65,0,.35,1),
+        transform 0.7s cubic-bezier(.65,0,.35,1);
+    }
+    .vertical-nav-container.expanded .vertical-nav {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0) scale(1);
+    }
+    .vertical-nav a {
+      width: 100%;
+      padding: 16px 28px;
+      color: #fff;
+      text-decoration: none;
+      text-align: left;
+      font-size: 1.25em;
+      transition: background 0.4s, color 0.4s, opacity 0.7s cubic-bezier(.4,0,.2,1);
+      border-radius: 6px;
+      margin: 2px 0;
+      box-sizing: border-box;
+      cursor: pointer;
+      display: block;
+      opacity: 0;
+      transform: translateX(-16px);
+      will-change: opacity, transform;
+    }
+    .vertical-nav-container.expanded .vertical-nav a {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.18s;
+    }
+    .vertical-nav a:hover,
+    .vertical-nav a.active {
+      color: #ffcc00;
+      background: #333;
+    }
+    .vertical-nav-container:not(.expanded) .vertical-nav a {
+      opacity: 0 !important;
+      pointer-events: none;
+      transition-delay: 0s;
+    }
+    .vertical-nav-container .nav-dots-btn {
+      display: none;
+    }
+    main {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
+      min-height: 400px;
+      position: relative;
+      z-index: 1;
+      transition: margin-left 0.7s cubic-bezier(.4,0,.2,1);
+    }
+    @media (min-width: 601px) {
+      main {
+        margin-left: 0;
+      }
+      .vertical-nav-container.expanded ~ .main-shift {
+        margin-left: 210px !important;
+      }
+      .header-bar {
+        margin-left: 0;
+      }
+      .vertical-nav-container.expanded ~ .header-shift {
+        margin-left: 210px !important;
+      }
+      footer {
+        margin-left: 0;
+      }
+      .vertical-nav-container.expanded ~ .footer-shift {
+        margin-left: 210px !important;
+      }
+    }
+    .section {
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      margin-bottom: 0;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transform: translateY(30px) scale(0.98);
+      transition:
+        opacity 0.85s cubic-bezier(.4,0,.2,1),
+        max-height 1.3s cubic-bezier(.45,0,.25,1),
+        transform 0.85s cubic-bezier(.4,0,.2,1);
+      will-change: opacity, max-height, transform;
+      position: relative;
+    }
+    .section.active {
+      display: block;
+      opacity: 1;
+      max-height: 2000px;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+      transition:
+        opacity 0.85s cubic-bezier(.4,0,.2,1),
+        max-height 1.3s cubic-bezier(.45,0,.25,1),
+        transform 0.85s cubic-bezier(.4,0,.2,1);
+      z-index: 2;
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #222;
+    }
+    .news-article, .doc-article {
+      margin-bottom: 20px;
+      cursor: pointer;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      opacity: 0;
+      transform: translateY(32px) scale(0.97);
+      transition:
+        opacity 0.95s cubic-bezier(.4,0,.2,1),
+        transform 0.95s cubic-bezier(.4,0,.2,1);
+      will-change: opacity, transform;
+    }
+    .section.active .news-article,
+    .section.active .doc-article {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition-delay: 0.18s;
+    }
+    .news-article h3, .doc-article h3 {
+      margin: 0 0 8px 0;
+      color: #444;
+      position: relative;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .news-date, .doc-date {
+      font-size: 0.9em;
+      color: #888;
+      font-weight: normal;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .news-article p.summary, .doc-article p.summary {
+      margin: 0;
+      color: #555;
+      line-height: 1.5;
+    }
+    .news-article:hover h3, .doc-article:hover h3 {
+      color: #ffcc00;
+    }
+    .news-article img, .doc-article img {
+      width: 150px;
+      height: auto;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      flex-shrink: 0;
+    }
+    .news-text, .doc-text {
+      flex: 1;
+    }
+    #news-overlay, #doc-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #fff;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      padding: 40px 60px 60px 60px;
+      display: none;
+      z-index: 3000;
+      max-width: 900px;
+      margin: 0 auto;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 8px;
+      font-size: 1.15em;
+    }
+    #news-overlay h2, #doc-overlay h2 {
+      margin-top: 0;
+      font-size: 2em;
+      color: #222;
+      margin-bottom: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    #news-overlay .overlay-content, #doc-overlay .overlay-content {
+      line-height: 2;
+      color: #222;
+    }
+    #news-overlay img, #doc-overlay img {
+      display: block;
+      max-width: 80%;
+      margin: 24px auto 24px auto;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #news-close-btn, #doc-close-btn {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      font-size: 2.5em;
+      color: #222;
+      cursor: pointer;
+      font-weight: bold;
+      background: transparent;
+      border: none;
+      z-index: 3100;
+      user-select: none;
+      line-height: 1;
+      padding: 0;
+    }
+    #news-close-btn:hover, #doc-close-btn:hover {
+      color: #ffcc00;
+    }
+    @media (max-width: 600px) {
+      .header-bar {
+        padding: 15px 10px;
+        font-size: 1.5em;
+      }
+      .header-bar .nav-dots-btn {
+        margin-right: 12px;
+        font-size: 1.2em;
+      }
+      .header-bar .aperture-logo {
+        margin-left: 10px;
+        height: 36px;
+      }
+      .vertical-nav-container {
+        width: 0;
+        height: 100vh;
+        min-height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 2002;
+        box-shadow: 0 0 0 rgba(0,0,0,0);
+      }
+      .vertical-nav-container.expanded {
+        width: 90vw;
+        box-shadow: 0 0 24px rgba(0,0,0,0.18);
+      }
+      .vertical-nav {
+        flex-direction: column;
+        width: 100vw;
+        margin: 0;
+        align-items: stretch;
+      }
+      .vertical-nav a {
+        width: 100%;
+        padding: 13px 15px;
+        font-size: 1.09em;
+        border-radius: 4px;
+      }
+      main {
+        margin-left: 0 !important;
+        padding: 0 5px;
+      }
+      #news-overlay, #doc-overlay {
+        padding: 20px 15px 40px 15px;
+        width: 90vw;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 6px;
+      }
+      #news-close-btn, #doc-close-btn {
+        top: 10px;
+        right: 10px;
+        font-size: 2em;
+      }
+      footer {
+        margin-left: 0 !important;
+      }
+    }
+    #news-overlay .overlay-content b, #doc-overlay .overlay-content b {
+      font-weight: bold;
+      font-size: 1.07em;
+      color: #111;
+    }
+    /* LOADING OVERLAY STYLES */
+    #loading-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255,255,255,0.7);
+      z-index: 5000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity 0.4s;
+    }
+    .aperture-loading {
+      font-size: 3em;
+      font-weight: bold;
+      color: #222;
+      opacity: 0.65;
+      letter-spacing: 3px;
+      animation: aperture-spin 1.2s linear infinite;
+      text-shadow: 0 4px 20px #fff, 0 1px 0 #ffcc00;
+      user-select: none;
+      padding: 32px 48px;
+      border-radius: 12px;
+    }
+    @keyframes aperture-spin {
+      0%   { transform: scale(1) rotate(0deg);}
+      70%  { transform: scale(1.08) rotate(23deg);}
+      80%  { transform: scale(1.13) rotate(-13deg);}
+      100% { transform: scale(1) rotate(0deg);}
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay">
+    <span class="aperture-loading">The Aperture</span>
+  </div>
+  <!-- HEADER with 3-dot menu, title, and logo -->
+  <div class="header-bar header-shift">
+    <button class="nav-dots-btn" id="navDotsBtn" aria-label="Open Navigation Menu" aria-expanded="false">
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+      <span class="nav-dot"></span>
+    </button>
+    <span class="site-title">The Aperture</span>
+    <span class="aperture-logo" aria-label="The Aperture Logo">
+      <!-- SVG Camera Aperture Logo -->
+      <svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true" style="vertical-align: middle;">
+        <circle cx="27" cy="27" r="25" fill="#222" stroke="#ffcc00" stroke-width="3"/>
+        <g stroke="#fff" stroke-width="2.5">
+          <path d="M27 7 L44 20" />
+          <path d="M44 20 L39 41" />
+          <path d="M39 41 L15 41" />
+          <path d="M15 41 L10 20" />
+          <path d="M10 20 L27 7" />
+          <path d="M27 7 L39 41" />
+          <path d="M10 20 L44 20" />
+          <path d="M15 41 L27 7" />
+        </g>
+        <circle cx="27" cy="27" r="8" fill="none" stroke="#ffcc00" stroke-width="2"/>
+      </svg>
+    </span>
+  </div>
+  <!-- Sidebar Navigation -->
+  <div class="vertical-nav-container" id="verticalNavContainer" aria-label="Main Navigation">
+    <nav class="vertical-nav" id="verticalNav">
+      <a href="#" data-section="home" class="active">Home</a>
+      <a href="#" data-section="news">News</a>
+      <a href="#" data-section="documentaries">Documentaries</a>
+      <a href="#" data-section="features">Features</a>
+      <a href="#" data-section="about">About</a>
+      <a href="#" data-section="contact">Contact</a>
+    </nav>
+  </div>
+  <main class="main-shift">
+    <!-- Home Section -->
+    <section id="home" class="section active">
+      <h2>Welcome to The Aperture</h2>
+      <p>Your source for in-depth news and documentary storytelling. Explore stories that matter, told with clarity and focus.</p>
+    </section>
+    <!-- News Section -->
+    <section id="news" class="section">
+      <h2>Latest News: Global Perspectives</h2>
+      <div class="news-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open article Climate Summit 2025">
+        <img src="/projectnews /pexels-jacobmorch-572780.jpg" alt="World leaders at Climate Summit 2025 agreeing on new carbon reduction targets." />
+        <div class="news-text">
+          <h3>
+            Climate Summit 2025: Nations Commit to New Green Targets
+            <time datetime="2025-07-08" class="news-date">July 8, 2025</time>
+          </h3>
+          <p class="summary">World leaders gathered this week to agree on ambitious new goals to reduce carbon emissions by 2030, aiming to limit global warming to 1.5°C.</p>
+        </div>
+      </div>
+      <div class="news-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open article Breakthrough in Renewable Energy Storage">
+        <img src="/projectnews /pexels-jacobmorch-572780.jpg" alt="Scientists showcasing new battery technology for renewable energy storage." />
+        <div class="news-text">
+          <h3>
+            Breakthrough in Renewable Energy Storage
+            <time datetime="2025-07-07" class="news-date">July 7, 2025</time>
+          </h3>
+          <p class="summary">Scientists have developed a new battery technology that could revolutionize how renewable energy is stored and used, making clean power more accessible worldwide.</p>
+        </div>
+      </div>
+      <div class="news-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open article Global Economy Shows Signs of Recovery">
+        <img src="/projectnews /pexels-jacobmorch-572780.jpg" alt="Graph showing steady economic rebound driven by innovation and increased trade activity." />
+        <div class="news-text">
+          <h3>
+            Global Economy Shows Signs of Recovery
+            <time datetime="2025-07-06" class="news-date">July 6, 2025</time>
+          </h3>
+          <p class="summary">Recent reports indicate a steady economic rebound in multiple regions, driven by technological innovation and increased trade activity.</p>
+        </div>
+      </div>
+    </section>
+    <!-- Documentaries Section -->
+    <section id="documentaries" class="section">
+      <h2>Documentaries</h2>
+      <div class="doc-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open documentary The Last Glaciers">
+        <img src="/projectdocs/pexels-glacier-12345.jpg" alt="A melting glacier with a documentary crew filming." />
+        <div class="doc-text">
+          <h3>
+            The Last Glaciers
+            <time datetime="2025-06-25" class="doc-date">June 25, 2025</time>
+          </h3>
+          <p class="summary">A journey into the heart of the world's vanishing glaciers, exploring the science and stories behind their rapid decline.</p>
+        </div>
+      </div>
+      <div class="doc-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open documentary Digital Tribes: Surviving the Internet Age">
+        <img src="/projectdocs/pexels-tribe-23456.jpg" alt="A family in a remote village using solar-powered tablets." />
+        <div class="doc-text">
+          <h3>
+            Digital Tribes: Surviving the Internet Age
+            <time datetime="2025-05-19" class="doc-date">May 19, 2025</time>
+          </h3>
+          <p class="summary">This film follows communities adapting to technology, from remote villages to urban centers, revealing new ways of connecting and surviving.</p>
+        </div>
+      </div>
+      <div class="doc-article" tabindex="0" role="button" aria-pressed="false" aria-label="Open documentary Oceans Unveiled: Life Beneath the Surface">
+        <img src="/projectdocs/pexels-ocean-34567.jpg" alt="Colorful coral reefs with a diver filming marine life." />
+        <div class="doc-text">
+          <h3>
+            Oceans Unveiled: Life Beneath the Surface
+            <time datetime="2025-04-10" class="doc-date">April 10, 2025</time>
+          </h3>
+          <p class="summary">Dive deep into the mysteries of the ocean with breathtaking footage and interviews with leading marine scientists.</p>
+        </div>
+      </div>
+    </section>
+    <!-- Features Section -->
+    <section id="features" class="section">
+      <h2>Features</h2>
+      <p>Read in-depth features and investigative reports crafted by our expert journalists.</p>
+    </section>
+    <!-- About Section -->
+    <section id="about" class="section">
+      <h2>About The Aperture</h2>
+      <p>The Aperture is dedicated to delivering insightful news and compelling documentary storytelling with integrity and clarity.</p>
+    </section>
+    <!-- Contact Section -->
+    <section id="contact" class="section">
+      <h2>Contact Us</h2>
+      <p>Have questions or story ideas? Reach out to us at <a href="mailto:contact@theaperture.com">contact@theaperture.com</a>.</p>
+    </section>
+  </main>
+  <!-- News Fullscreen Overlay -->
+  <div id="news-overlay" aria-hidden="true" role="dialog" aria-label="Full News Article">
+    <button id="news-close-btn" aria-label="Close Full News Article">&times;</button>
+    <h2 id="overlay-title"></h2>
+    <div class="overlay-content" id="overlay-content"></div>
+  </div>
+  <!-- Documentary Fullscreen Overlay -->
+  <div id="doc-overlay" aria-hidden="true" role="dialog" aria-label="Full Documentary Article">
+    <button id="doc-close-btn" aria-label="Close Full Documentary Article">&times;</button>
+    <h2 id="doc-overlay-title"></h2>
+    <div class="overlay-content" id="doc-overlay-content"></div>
+  </div>
+  <footer class="footer-shift">&copy; 2025 The Aperture. All rights reserved.</footer>
+  <script>
+    // LOADING LOGIC
+    function showLoadingOverlay(duration = 1000, callback) {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.classList.add('visible');
+      setTimeout(() => {
+        overlay.classList.remove('visible');
+        if (typeof callback === 'function') callback();
+      }, duration);
+    }
+
+    // Navigation logic for vertical nav
+    const navLinks = document.querySelectorAll('.vertical-nav a[data-section]');
+    const sections = document.querySelectorAll('main .section');
+    const newsOverlay = document.getElementById('news-overlay');
+    const newsCloseBtn = document.getElementById('news-close-btn');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayContent = document.getElementById('overlay-content');
+    const docOverlay = document.getElementById('doc-overlay');
+    const docCloseBtn = document.getElementById('doc-close-btn');
+    const docOverlayTitle = document.getElementById('doc-overlay-title');
+    const docOverlayContent = document.getElementById('doc-overlay-content');
+    const verticalNavContainer = document.getElementById('verticalNavContainer');
+    const navDotsBtn = document.getElementById('navDotsBtn');
+    const verticalNav = document.getElementById('verticalNav');
+    const mainContent = document.querySelector('main');
+    const headerBar = document.querySelector('.header-bar');
+    const footerBar = document.querySelector('footer');
+
+    navDotsBtn.addEventListener('click', () => {
+      const expanded = verticalNavContainer.classList.toggle('expanded');
+      navDotsBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (window.innerWidth > 600) {
+        if (expanded) {
+          mainContent.classList.add('main-shift');
+          headerBar.classList.add('header-shift');
+          footerBar.classList.add('footer-shift');
+        } else {
+          mainContent.classList.remove('main-shift');
+          headerBar.classList.remove('header-shift');
+          footerBar.classList.remove('footer-shift');
+        }
+      }
+      if (expanded) {
+        setTimeout(() => {
+          const firstLink = verticalNav.querySelector('a');
+          if(firstLink) firstLink.focus();
+        }, 200);
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (
+        verticalNavContainer.classList.contains('expanded') &&
+        !verticalNavContainer.contains(e.target) &&
+        !navDotsBtn.contains(e.target) &&
+        !newsOverlay.contains(e.target) &&
+        !docOverlay.contains(e.target)
+      ) {
+        verticalNavContainer.classList.remove('expanded');
+        navDotsBtn.setAttribute('aria-expanded', 'false');
+        mainContent.classList.remove('main-shift');
+        headerBar.classList.remove('header-shift');
+        footerBar.classList.remove('footer-shift');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (
+        e.key === 'Escape' &&
+        verticalNavContainer.classList.contains('expanded')
+      ) {
+        verticalNavContainer.classList.remove('expanded');
+        navDotsBtn.setAttribute('aria-expanded', 'false');
+        mainContent.classList.remove('main-shift');
+        headerBar.classList.remove('header-shift');
+        footerBar.classList.remove('footer-shift');
+        navDotsBtn.focus();
+      }
+    });
+
+    const articles = {
+      "Climate Summit 2025: Nations Commit to New Green Targets": {
+        content: [
+          { type: 'text', value: "<b>World leaders gathered this week to agree on ambitious new goals to reduce carbon emissions by 2030, aiming to limit global warming to 1.5°C.</b>" },
+          { type: 'text', value: "The summit included representatives from over 190 countries, focusing on sustainable development and renewable energy investments." },
+          { type: 'image', src: "/projectnews /pexels-jacobmorch-572780.jpg", alt: "World leaders at Climate Summit 2025 agreeing on new carbon reduction targets." },
+          { type: 'text', value: "Experts believe this agreement could be a turning point in climate action, setting a precedent for future international cooperation." }
+        ]
+      },
+      "Breakthrough in Renewable Energy Storage": {
+        content: [
+          { type: 'text', value: "<b>Scientists have developed a new battery technology that could revolutionize how renewable energy is stored and used, making clean power more accessible worldwide.</b>" },
+          { type: 'image', src: "/projectnews /pexels-jacobmorch-572780.jpg", alt: "Scientists showcasing new battery technology for renewable energy storage." },
+          { type: 'text', value: "This technology promises higher capacity, faster charging, and longer lifespan, potentially accelerating the transition to a green energy future." }
+        ]
+      },
+      "Global Economy Shows Signs of Recovery": {
+        content: [
+          { type: 'text', value: "<b>Recent reports indicate a steady economic rebound in multiple regions, driven by technological innovation and increased trade activity.</b>" },
+          { type: 'image', src: "/projectnews /pexels-jacobmorch-572780.jpg", alt: "Graph showing steady economic rebound driven by innovation and increased trade activity." },
+          { type: 'text', value: "Economists are cautiously optimistic, noting improvements in employment rates and consumer confidence, although challenges remain due to geopolitical tensions." }
+        ]
+      }
+    };
+    const documentaries = {
+      "The Last Glaciers": {
+        content: [
+          { type: 'text', value: "<b>Explore the world's vanishing glaciers and the fight to save them.</b>" },
+          { type: 'text', value: "This documentary travels with glaciologists and local communities impacted by the rapid melting of ancient ice." },
+          { type: 'image', src: "/projectdocs/pexels-glacier-12345.jpg", alt: "A melting glacier with a documentary crew filming." },
+          { type: 'text', value: "Captivating visuals and personal stories bring home the urgency of climate action for future generations." }
+        ]
+      },
+      "Digital Tribes: Surviving the Internet Age": {
+        content: [
+          { type: 'text', value: "<b>Follow the digital transformation in the world's most remote corners.</b>" },
+          { type: 'image', src: "/projectdocs/pexels-tribe-23456.jpg", alt: "A family in a remote village using solar-powered tablets." },
+          { type: 'text', value: "The film follows families and entire communities as they balance tradition and technology, adapting to the realities of a connected world." }
+        ]
+      },
+      "Oceans Unveiled: Life Beneath the Surface": {
+        content: [
+          { type: 'text', value: "<b>Uncover the mysteries of the deep ocean, from vibrant coral reefs to elusive marine creatures.</b>" },
+          { type: 'image', src: "/projectdocs/pexels-ocean-34567.jpg", alt: "Colorful coral reefs with a diver filming marine life." },
+          { type: 'text', value: "With unprecedented underwater footage, marine biologists reveal the delicate balance sustaining ocean life." }
+        ]
+      }
+    };
+    let lastActiveSectionId = 'home';
+    let currentlySliding = false;
+    function showSection(id) {
+      if (currentlySliding) return;
+      currentlySliding = true;
+      const prevSection = document.querySelector('.section.active');
+      const newSection = document.getElementById(id);
+      if (prevSection === newSection) {
+        currentlySliding = false;
+        return;
+      }
+      showLoadingOverlay(1000, () => {
+        if (prevSection) {
+          prevSection.classList.remove('active');
+          setTimeout(() => {
+            newSection.classList.add('active');
+            currentlySliding = false;
+          }, 800);
+        } else {
+          newSection.classList.add('active');
+          currentlySliding = false;
+        }
+        lastActiveSectionId = id;
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('data-section') === id);
+        });
+        hideOverlay();
+        hideDocOverlay();
+        verticalNavContainer.classList.remove('expanded');
+        navDotsBtn.setAttribute('aria-expanded', 'false');
+        mainContent.classList.remove('main-shift');
+        headerBar.classList.remove('header-shift');
+        footerBar.classList.remove('footer-shift');
+      });
+    }
+    function hideOverlay() {
+      newsOverlay.style.display = 'none';
+      newsOverlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+    function hideDocOverlay() {
+      docOverlay.style.display = 'none';
+      docOverlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+    function showOverlay(title, articleData) {
+      showLoadingOverlay(1000, () => {
+        overlayTitle.textContent = title;
+        overlayContent.innerHTML = "";
+        if (articleData && articleData.content && Array.isArray(articleData.content)) {
+          articleData.content.forEach(block => {
+            if (block.type === "text") {
+              const p = document.createElement('p');
+              p.className = "overlay-content";
+              p.innerHTML = block.value;
+              overlayContent.appendChild(p);
+            } else if (block.type === "image") {
+              const img = document.createElement('img');
+              img.src = block.src;
+              img.alt = block.alt || "";
+              overlayContent.appendChild(img);
+            }
+          });
+        } else {
+          const p = document.createElement('p');
+          p.textContent = articleData && articleData.content ? articleData.content : "Full article content unavailable.";
+          overlayContent.appendChild(p);
+        }
+        newsOverlay.style.display = 'block';
+        newsOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        newsCloseBtn.focus();
+      });
+    }
+    function showDocOverlay(title, articleData) {
+      showLoadingOverlay(1000, () => {
+        docOverlayTitle.textContent = title;
+        docOverlayContent.innerHTML = "";
+        if (articleData && articleData.content && Array.isArray(articleData.content)) {
+          articleData.content.forEach(block => {
+            if (block.type === "text") {
+              const p = document.createElement('p');
+              p.className = "overlay-content";
+              p.innerHTML = block.value;
+              docOverlayContent.appendChild(p);
+            } else if (block.type === "image") {
+              const img = document.createElement('img');
+              img.src = block.src;
+              img.alt = block.alt || "";
+              docOverlayContent.appendChild(img);
+            }
+          });
+        } else {
+          const p = document.createElement('p');
+          p.textContent = articleData && articleData.content ? articleData.content : "Full documentary content unavailable.";
+          docOverlayContent.appendChild(p);
+        }
+        docOverlay.style.display = 'block';
+        docOverlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        docCloseBtn.focus();
+      });
+    }
+    navLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        if (newsOverlay.style.display === 'block' || docOverlay.style.display === 'block') return;
+        const sectionId = link.getAttribute('data-section');
+        showSection(sectionId);
+      });
+    });
+    const newsArticles = document.querySelectorAll('#news .news-article');
+    newsArticles.forEach(article => {
+      article.addEventListener('click', () => {
+        const title = article.querySelector('h3').childNodes[0].textContent.trim();
+        const articleData = articles[title];
+        if (articleData) {
+          showOverlay(title, articleData);
+        } else {
+          showOverlay(title, {content: "Full article content unavailable."});
+        }
+      });
+      article.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          article.click();
+        }
+      });
+    });
+    const docArticles = document.querySelectorAll('#documentaries .doc-article');
+    docArticles.forEach(article => {
+      article.addEventListener('click', () => {
+        const title = article.querySelector('h3').childNodes[0].textContent.trim();
+        const articleData = documentaries[title];
+        if (articleData) {
+          showDocOverlay(title, articleData);
+        } else {
+          showDocOverlay(title, {content: "Full documentary content unavailable."});
+        }
+      });
+      article.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          article.click();
+        }
+      });
+    });
+    newsCloseBtn.addEventListener('click', () => {
+      hideOverlay();
+    });
+    docCloseBtn.addEventListener('click', () => {
+      hideDocOverlay();
+    });
+    // Show loading on first load
+    window.addEventListener('DOMContentLoaded', () => {
+      showLoadingOverlay(1000, () => {
+        showSection('home');
+      });
+    });
+  </script>
+</body>
+</html>
