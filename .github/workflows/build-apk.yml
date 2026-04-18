@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     
     steps:
     - uses: actions/checkout@v4
@@ -18,284 +18,254 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          openjdk-17-jdk \
-          build-essential \
-          git \
-          zip \
-          unzip \
-          curl \
-          wget \
-          libssl-dev \
-          libffi-dev \
-          python3-dev \
-          zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev
-    
-    - name: Install Android SDK manually
-      run: |
-        # Create Android SDK directory
-        mkdir -p $HOME/.buildozer/android/platform/android-sdk
-        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-        
-        # Download Android command line tools
-        cd $HOME/.buildozer/android/platform
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip -q commandlinetools-linux-11076708_latest.zip
-        mkdir -p $ANDROID_HOME/cmdline-tools
-        mv cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-        
-        # Accept licenses
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-        
-        # Install required SDK components
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3" > /dev/null 2>&1
-        
-        echo "Android SDK installed successfully"
-        
-    - name: Setup environment variables
-      run: |
-        echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-        echo "ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/.buildozer/android/platform/android-sdk/platform-tools:$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin:$HOME/.buildozer/android/platform/android-sdk/build-tools/30.0.3" >> $GITHUB_ENV
-    
-    - name: Verify aidl installation
-      run: |
-        # Check if aidl exists
-        if [ -f "$ANDROID_HOME/build-tools/30.0.3/aidl" ]; then
-          echo "✅ Aidl found at: $ANDROID_HOME/build-tools/30.0.3/aidl"
-          # Just check if file exists and is executable
-          file $ANDROID_HOME/build-tools/30.0.3/aidl
-          echo "Aidl is ready to use"
-        else
-          echo "❌ Aidl not found"
-          find $ANDROID_HOME -name "aidl" 2>/dev/null
-          exit 1
-        fi
-    
-    - name: Install Python dependencies
+    - name: Install Briefcase and dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install --user buildozer cython
-        pip install --user kivy==2.2.1 kivymd==1.1.1 sympy==1.12 mpmath==1.3.0
+        pip install briefcase toga sympy
     
-    - name: Create minimal working app
+    - name: Setup Java for Android
       run: |
-        mkdir -p src/mathematica_console
+        sudo apt-get update
+        sudo apt-get install -y openjdk-17-jdk
+        echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+    
+    - name: Create Briefcase project
+      run: |
+        briefcase new \
+          --formal-name "Mathematica Console" \
+          --bundle "org.mathematica" \
+          --project-name "mathematica_console" \
+          --description "Offline Mathematica-style math console" \
+          --author "Your Name" \
+          --author-email "your@email.com" \
+          --license "MIT" \
+          --no-input
+    
+    - name: Create app files
+      run: |
+        # Create the app directory structure
+        mkdir -p src/mathematica_console/mathematica_console/resources
         
-        # Create __init__.py
-        cat > src/mathematica_console/__init__.py << 'EOF'
-        __version__ = "1.0.0"
-        EOF
-        
-        # Create main.py with working app
-        cat > src/mathematica_console/main.py << 'EOF'
-        """
-        Mathematica Console - Offline Symbolic Math App
-        """
-        from kivy.app import App
-        from kivy.uix.boxlayout import BoxLayout
-        from kivy.uix.textinput import TextInput
-        from kivy.uix.label import Label
-        from kivy.uix.button import Button
-        from kivy.uix.scrollview import ScrollView
-        from kivy.core.window import Window
+        # Create main app file
+        cat > src/mathematica_console/mathematica_console/app.py << 'EOF'
+        import toga
+        from toga.style import Pack
+        from toga.style.pack import COLUMN, ROW
         import sympy as sp
+        from sympy import *
+        import sys
+        from io import StringIO
         
-        class MathematicaConsole(App):
-            def build(self):
-                Window.size = (400, 700)
-                Window.clearcolor = (0.1, 0.1, 0.12, 1)
+        class MathematicaConsole(toga.App):
+            def startup(self):
+                self.main_window = toga.MainWindow(title=self.formal_name)
                 
-                # Main layout
-                main_layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-                
-                # Title
-                title = Label(text='Mathematica Console', size_hint_y=0.1, font_size='20sp', color=(0.8, 0.8, 0.9, 1))
-                main_layout.add_widget(title)
-                
-                # Output area (scrollable)
-                self.output_container = ScrollView(size_hint_y=0.7)
-                self.output_layout = BoxLayout(orientation='vertical', size_hint_y=None)
-                self.output_layout.bind(minimum_height=self.output_layout.setter('height'))
-                self.output_container.add_widget(self.output_layout)
-                main_layout.add_widget(self.output_container)
+                # Main container
+                main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
                 
                 # Input area
-                input_layout = BoxLayout(size_hint_y=0.15, spacing=10)
-                self.input = TextInput(hint_text='Enter expression (e.g., 2+2, x**2, integrate(x**2, x))', multiline=False)
-                self.input.bind(on_text_validate=self.evaluate)
-                submit_btn = Button(text='Evaluate', size_hint_x=0.25)
-                submit_btn.bind(on_press=self.evaluate)
-                clear_btn = Button(text='Clear', size_hint_x=0.15)
-                clear_btn.bind(on_press=self.clear_output)
-                
-                input_layout.add_widget(self.input)
-                input_layout.add_widget(submit_btn)
-                input_layout.add_widget(clear_btn)
-                main_layout.add_widget(input_layout)
-                
-                # Add welcome message
-                self.add_output("Welcome to Mathematica Console!", info=True)
-                self.add_output("Examples:", info=True)
-                self.add_output("  • 2 + 2", info=True)
-                self.add_output("  • x**2 + 3*x + 2", info=True)
-                self.add_output("  • integrate(x**2, x)", info=True)
-                self.add_output("  • diff(sin(x), x)", info=True)
-                self.add_output("  • solve(x**2 - 4, x)", info=True)
-                self.add_output("", info=True)
-                
-                return main_layout
-            
-            def add_output(self, text, error=False, info=False):
-                """Add output to the console"""
-                if error:
-                    color = (1, 0.3, 0.3, 1)
-                elif info:
-                    color = (0.5, 0.8, 0.5, 1)
-                else:
-                    color = (0.9, 0.9, 0.9, 1)
-                
-                output_label = Label(
-                    text=text,
-                    size_hint_y=None,
-                    height=40,
-                    halign='left',
-                    valign='top',
-                    color=color,
-                    font_size='14sp'
+                self.code_input = toga.MultilineTextInput(
+                    style=Pack(flex=1, padding=(0, 0, 10, 0)),
+                    placeholder="Enter mathematical expression...\n\nExamples:\n2 + 2\nx**2 + 3*x + 2\nintegrate(x**2, x)\ndiff(sin(x), x)\nsolve(x**2 - 4, x)\nlimit(sin(x)/x, x, 0)",
+                    initial=""
                 )
-                output_label.bind(size=output_label.setter('text_size'))
-                self.output_layout.add_widget(output_label)
                 
-                # Scroll to bottom
-                self.output_container.scroll_y = 0
+                # Buttons
+                button_box = toga.Box(style=Pack(direction=ROW, padding=5))
+                run_button = toga.Button("Evaluate", on_press=self.evaluate, style=Pack(padding=5, flex=1))
+                clear_button = toga.Button("Clear", on_press=self.clear, style=Pack(padding=5, flex=1))
+                
+                button_box.add(run_button)
+                button_box.add(clear_button)
+                
+                # Output area
+                self.output_area = toga.MultilineTextInput(
+                    style=Pack(flex=1, padding=(10, 0, 0, 0)),
+                    readonly=True,
+                    placeholder="Results will appear here..."
+                )
+                
+                # Status bar
+                self.status_label = toga.Label(
+                    "Ready | SymPy " + sp.__version__,
+                    style=Pack(padding=(5, 10, 5, 5), font_size=10)
+                )
+                
+                # Add all to main box
+                main_box.add(self.code_input)
+                main_box.add(button_box)
+                main_box.add(self.output_area)
+                main_box.add(self.status_label)
+                
+                self.main_window.content = main_box
+                self.main_window.show()
             
-            def evaluate(self, instance):
-                """Evaluate mathematical expression"""
-                expr_text = self.input.text.strip()
-                if not expr_text:
+            def evaluate(self, widget):
+                code = self.code_input.value.strip()
+                if not code:
+                    self.output_area.value = "Please enter an expression"
                     return
                 
-                # Show input
-                self.add_output(f"In: {expr_text}")
+                self.status_label.text = "Evaluating..."
+                
+                # Capture stdout
+                old_stdout = sys.stdout
+                redirected_output = StringIO()
+                sys.stdout = redirected_output
                 
                 try:
-                    # Parse and evaluate using sympy
-                    expr = sp.sympify(expr_text)
-                    result = sp.simplify(expr)
+                    # Parse and evaluate the expression
+                    expr = sp.sympify(code)
                     
-                    # Format result
-                    result_str = str(result)
-                    if len(result_str) > 100:
-                        result_str = result_str[:100] + "..."
+                    # Simplify
+                    simplified = sp.simplify(expr)
                     
-                    self.add_output(f"Out: {result_str}")
+                    # Try to get numerical value if possible
+                    result = str(simplified)
+                    
+                    # Try to evaluate numerically for constants
+                    try:
+                        if not simplified.free_symbols:
+                            numeric = float(simplified.evalf())
+                            result += f"\n≈ {numeric}"
+                    except:
+                        pass
+                    
+                    self.output_area.value = f"In: {code}\n\nOut: {result}"
+                    self.status_label.text = "Ready - Evaluation successful"
                     
                 except Exception as e:
-                    self.add_output(f"Error: {str(e)}", error=True)
-                
-                # Clear input
-                self.input.text = ""
+                    self.output_area.value = f"Error: {str(e)}"
+                    self.status_label.text = "Ready - Error in evaluation"
+                finally:
+                    sys.stdout = old_stdout
             
-            def clear_output(self, instance):
-                """Clear all output"""
-                self.output_layout.clear_widgets()
-                self.add_output("Console cleared", info=True)
+            def clear(self, widget):
+                self.code_input.value = ""
+                self.output_area.value = ""
+                self.status_label.text = "Ready - Cleared"
         
-        if __name__ == '__main__':
-            MathematicaConsole().run()
+        def main():
+            return MathematicaConsole()
+        
+        if __name__ == "__main__":
+            app = main()
+            app.main_loop()
+        EOF
+        
+        # Create __init__.py
+        cat > src/mathematica_console/mathematica_console/__init__.py << 'EOF'
+        from .app import main
+        
+        __all__ = ['main']
         EOF
     
-    - name: Create buildozer.spec
+    - name: Update pyproject.toml
       run: |
-        cat > buildozer.spec << 'EOF'
-        [app]
+        cat > pyproject.toml << 'EOF'
+        [build-system]
+        requires = ["briefcase"]
+        build-backend = "briefcase.build"
         
-        title = Mathematica Console
-        package.name = mathemaconsole
-        package.domain = org.mathematica
-        version = 1.0.0
+        [tool.briefcase]
+        project_name = "mathematica_console"
+        bundle = "org.mathematica"
+        version = "1.0.0"
+        description = "Offline Mathematica-style math console"
+        author = "Your Name"
+        author_email = "your@email.com"
+        license = "MIT"
         
-        source.dir = src/mathematica_console
-        requirements = python3,kivy==2.2.1,sympy==1.12
+        [tool.briefcase.app.mathematica_console]
+        formal_name = "Mathematica Console"
+        sources = ["src/mathematica_console"]
+        requires = [
+            "toga>=0.4.0",
+            "sympy>=1.12",
+        ]
         
-        android.permissions = INTERNET
-        android.api = 30
-        android.minapi = 21
-        android.ndk = 23b
-        android.sdk = 30
-        android.archs = armeabi-v7a, arm64-v8a
+        [tool.briefcase.app.mathematica_console.android]
+        target_abis = ["arm64-v8a", "armeabi-v7a"]
+        min_sdk = 21
+        target_sdk = 33
+        deployment = true
         
-        android.orientation = portrait
-        fullscreen = 0
-        window.size = (400, 700)
+        [tool.briefcase.app.mathematica_console.macOS]
+        requires = []
         
-        log_level = 2
-        debug = 0
-        warn_on_root = 1
+        [tool.briefcase.app.mathematica_console.windows]
+        requires = []
         
-        [buildozer]
-        
-        log_level = 2
-        warn_on_root = 1
-        android.accept_sdk_license = True
+        [tool.briefcase.app.mathematica_console.linux]
+        requires = []
         EOF
     
-    - name: Build APK
+    - name: Build Android APK
       run: |
-        # Clean previous builds
-        rm -rf .buildozer bin
+        # Create Android platform
+        briefcase create android
         
-        # Build APK
-        buildozer android debug 2>&1 | tee build.log
+        # Build the APK
+        briefcase build android
+        
+        # Package the APK
+        briefcase package android
     
-    - name: Find APK
+    - name: Find and rename APK
       run: |
-        # Find the generated APK
-        APK_PATH=$(find . -name "*.apk" -type f | head -n 1)
-        if [ -n "$APK_PATH" ]; then
+        # Find the APK file
+        APK_FILE=$(find . -name "*.apk" -type f | grep -v "unaligned" | head -n 1)
+        if [ -n "$APK_FILE" ]; then
+          cp "$APK_FILE" mathematica-console.apk
           echo "APK_FOUND=true" >> $GITHUB_ENV
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          cp "$APK_PATH" mathematica-console.apk
+          echo "APK_SIZE=$(du -h mathematica-console.apk | cut -f1)" >> $GITHUB_ENV
+          echo "✅ APK created successfully!"
           ls -lh mathematica-console.apk
         else
           echo "APK_FOUND=false" >> $GITHUB_ENV
-          echo "No APK found. Checking directories..."
-          ls -la bin/ 2>/dev/null || echo "No bin directory"
-          ls -la .buildozer/ 2>/dev/null || echo "No .buildozer directory"
+          echo "❌ APK not found"
+          # List directories for debugging
+          find . -name "*.apk" 2>/dev/null
+          ls -la dist/ 2>/dev/null || echo "No dist directory"
+          ls -la windows/ 2>/dev/null || echo "No windows directory"
+          ls -la linux/ 2>/dev/null || echo "No linux directory"
+          ls -la macos/ 2>/dev/null || echo "No macos directory"
         fi
     
     - name: Upload APK
       if: env.APK_FOUND == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: mathematica-console
+        name: mathematica-console-apk
         path: mathematica-console.apk
-        if-no-files-found: ignore
+        compression-level: 0
     
-    - name: Upload build log
-      if: always()
-      uses: actions/upload-artifact@v4
+    - name: Create Release
+      if: env.APK_FOUND == 'true'
+      uses: softprops/action-gh-release@v1
       with:
-        name: build-log
-        path: build.log
-        if-no-files-found: ignore
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        files: mathematica-console.apk
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Build summary
+    - name: Build Summary
       if: always()
       run: |
         echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
         if [ "${{ env.APK_FOUND }}" = "true" ]; then
           echo "✅ **APK built successfully!**" >> $GITHUB_STEP_SUMMARY
-          echo "- File: mathematica-console.apk" >> $GITHUB_STEP_SUMMARY
-          echo "- Size: $(ls -lh mathematica-console.apk | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
+          echo "- **File:** mathematica-console.apk" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size:** ${{ env.APK_SIZE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Download:** Check artifacts or releases" >> $GITHUB_STEP_SUMMARY
         else
-          echo "❌ **Build failed**" >> $GITHUB_STEP_SUMMARY
-          echo "Check the build log for details." >> $GITHUB_STEP_SUMMARY
+          echo "❌ **Build failed - APK not created**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Debug Information:" >> $GITHUB_STEP_SUMMARY
+          echo "- Check the build logs above for errors" >> $GITHUB_STEP_SUMMARY
+          echo "- Make sure all dependencies are installed" >> $GITHUB_STEP_SUMMARY
         fi
