@@ -7,12 +7,8 @@
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
     
     <application android:label="Math Tools" 
-                 android:icon="@mipmap/ic_launcher"
-                 android:roundIcon="@mipmap/ic_launcher_round"
-                 android:allowBackup="true"
-                 android:theme="@style/Theme.Maui.Splash">
+                 android:allowBackup="true">
         
-        <!-- 🔥 THIS IS THE CRITICAL SECTION 🔥 -->
         <activity android:name="com.mathtools.app.MainActivity"
                   android:exported="true">
             <intent-filter>
