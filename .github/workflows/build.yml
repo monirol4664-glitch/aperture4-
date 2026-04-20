@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -12,39 +12,34 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '11'
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Install Dependencies
+    - name: Install Cordova
+      run: npm install -g cordova
+    
+    - name: Create Cordova Project
       run: |
-        npm install -g @ionic/cli
-        npm install
-    
-    - name: Build Web App
-      run: npm run build
-    
-    - name: Sync Capacitor
-      run: npx cap sync android
+        cordova create MathTools com.mathtools.app "Math Tools"
+        cd MathTools
+        cordova platform add android
+        cp -r ../www/* www/
+        cp ../config.xml .
     
     - name: Build APK
-      working-directory: android
+      working-directory: MathTools
       run: |
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        cordova build android --release
+        cp platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk ../
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
-        path: android/app/build/outputs/apk/debug/*.apk
+        name: MathToolsApp
+        path: app-release-unsigned.apk
