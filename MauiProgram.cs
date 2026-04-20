@@ -23,8 +23,8 @@ public static class MauiProgram
 
 public class App : Application
 {
-    public App()
+    protected override Window CreateWindow(IActivationState? activationState)
     {
-        MainPage = new NavigationPage(new MainPage());
+        return new Window(new NavigationPage(new MainPage()));
     }
 }
