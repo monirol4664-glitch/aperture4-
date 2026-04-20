@@ -8,11 +8,11 @@ public partial class MainPage : ContentPage
     {
         InitializeComponent();
         
-        AlgebraButton.Clicked += OnAlgebraClicked;
-        CalculusButton.Clicked += OnCalculusClicked;
-        StatsButton.Clicked += OnStatsClicked;
-        ConverterButton.Clicked += OnConverterClicked;
-        MatrixButton.Clicked += OnMatrixClicked;
+        AlgebraBtn.Clicked += OnAlgebraClicked;
+        CalculusBtn.Clicked += OnCalculusClicked;
+        StatsBtn.Clicked += OnStatsClicked;
+        ConverterBtn.Clicked += OnConverterClicked;
+        MatrixBtn.Clicked += OnMatrixClicked;
     }
     
     private async void OnAlgebraClicked(object sender, EventArgs e)
@@ -49,7 +49,6 @@ public partial class MainPage : ContentPage
         if (!string.IsNullOrEmpty(input) && double.TryParse(input, out double x))
         {
             var calc = new CalculusEngine();
-            // f(x) = x²
             double derivative = calc.Derivative(t => t * t, x);
             await DisplayAlert("Derivative", $"For f(x)=x² at x={x}\nDerivative = {derivative:F4}", "OK");
         }
@@ -90,16 +89,16 @@ public partial class MainPage : ContentPage
         var converter = new UnitConverter();
         var categories = converter.GetCategories();
         
-        string category = await DisplayActionSheet("Select Category", "Cancel", null, categories);
+        string category = await DisplayActionSheet("Select Category", "Cancel", null, categories.ToArray());
         
         if (category != "Cancel" && !string.IsNullOrEmpty(category))
         {
             var units = converter.GetUnits(category);
-            string fromUnit = await DisplayActionSheet("From Unit", "Cancel", null, units);
+            string fromUnit = await DisplayActionSheet("From Unit", "Cancel", null, units.ToArray());
             
             if (fromUnit != "Cancel" && !string.IsNullOrEmpty(fromUnit))
             {
-                string toUnit = await DisplayActionSheet("To Unit", "Cancel", null, units);
+                string toUnit = await DisplayActionSheet("To Unit", "Cancel", null, units.ToArray());
                 
                 if (toUnit != "Cancel" && !string.IsNullOrEmpty(toUnit))
                 {
