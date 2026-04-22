@@ -32,11 +32,47 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Create Android project
+    - name: Create Android project with gradlew
       run: |
+        # Create directory structure
         mkdir -p android/app/src/main/assets
         mkdir -p android/app/src/main/java/com/mathapp
         cp -r build/* android/app/src/main/assets/
+        
+        # Create gradle wrapper files
+        cd android
+        
+        # Create gradlew script
+        cat > gradlew << 'EOF'
+        #!/bin/sh
+        GRADLE_VERSION=7.5
+        GRADLE_URL="https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+        GRADLE_ZIP="gradle-${GRADLE_VERSION}-bin.zip"
+        GRADLE_DIR="gradle-${GRADLE_VERSION}"
+        
+        if [ ! -d "$GRADLE_DIR" ]; then
+            echo "Downloading Gradle ${GRADLE_VERSION}..."
+            curl -L -o "$GRADLE_ZIP" "$GRADLE_URL"
+            unzip -q "$GRADLE_ZIP"
+            rm "$GRADLE_ZIP"
+        fi
+        
+        exec "$GRADLE_DIR/bin/gradle" "$@"
+        EOF
+        
+        chmod +x gradlew
+        
+        # Create gradle wrapper properties
+        mkdir -p wrapper
+        cat > wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-7.5-bin.zip
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        
+        cd ..
     
     - name: Create AndroidManifest.xml
       run: |
@@ -170,12 +206,16 @@ jobs:
     - name: Build APK
       run: |
         cd android
-        chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         cd ..
+    
+    - name: Find and rename APK
+      run: |
+        find android -name "*.apk" -exec cp {} MathMaster.apk \;
+        echo "APK created successfully"
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: MathMaster-App
-        path: android/app/build/outputs/apk/release/*.apk
+        path: MathMaster.apk
