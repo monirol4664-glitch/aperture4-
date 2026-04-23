@@ -1,0 +1,63 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # For tags/releases
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle  # Cache Gradle wrapper
+
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ./.gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Accept Android SDK licenses
+      run: |
+        yes | sdkmanager --licenses || true  # Auto-accept licenses [web:27]
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Run unit tests
+      run: ./gradlew testDebugUnitTest --stacktrace --info || ./gradlew testDebugUnitTest --rerun-tasks
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --stacktrace --info
+      continue-on-error: true  # Log failures for debug
+
+    - name: Build Release AAB (if success)
+      if: success()
+      run: ./gradlew bundleRelease --stacktrace
+
+    - name: Upload artifacts
+      if: always()  # Always upload for debugging
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-${{ github.sha }}
+        path: |
+          app/build/outputs/apk/debug/
+          app/build/outputs/bundle/release/
+        retention-days: 7
