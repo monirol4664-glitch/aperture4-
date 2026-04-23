@@ -1,6 +1,8 @@
 pluginManagement {
     repositories {
-        google()
+        google { content { includeGroupByRegex("com\\.android.*") 
+        includeGroupByRegex("com\\.google.*")
+        includeGroupByRegex("androidx.*") } }
         mavenCentral()
         gradlePluginPortal()
     }
@@ -10,7 +12,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots/") }  // For Symja snapshots [web:18]
+        maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots/") }
     }
 }
 rootProject.name = "MathEngine"
