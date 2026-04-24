@@ -1,0 +1,16 @@
+{
+    "name": "Offline Python Compiler",
+    "short_name": "PythonIDE",
+    "description": "Offline Python compiler with NumPy, Matplotlib, Pandas, and SciPy",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#667eea",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        }
+    ]
+}
