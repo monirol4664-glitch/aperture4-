@@ -1,0 +1,38 @@
+name: flutter_ide
+description: Python IDE with Jupyter-style interface
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI
+  cupertino_icons: ^1.0.6
+  
+  # Code editing
+  flutter_highlight: ^0.7.0
+  highlight: ^0.7.0
+  
+  # Python execution (downloads at runtime)
+  flutter_python: ^0.2.0
+  
+  # Storage
+  path_provider: ^2.1.1
+  dio: ^5.4.0  # For downloading Python packages
+  
+  # State management
+  provider: ^6.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/python/
