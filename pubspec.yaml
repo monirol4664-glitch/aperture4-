@@ -1,26 +1,17 @@
 name: python_ide
-description: Python IDE with Jupyter-style interface
+description: Python IDE with embedded Python runtime
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  
-  # UI Components
   cupertino_icons: ^1.0.6
-  
-  # Code editing with syntax highlighting
-  flutter_highlight: ^0.7.0
-  highlight: ^0.7.0
-  
-  # State management
   provider: ^6.1.1
-  
-  # File handling
   path_provider: ^2.1.1
+  chaquopy: ^0.0.19  # ← Add this line
 
 dev_dependencies:
   flutter_test:
@@ -29,6 +20,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  assets:
-    - assets/
