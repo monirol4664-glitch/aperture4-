@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Kernel</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+</head>
+<body>
+    <script>
+        let pyodide = null;
+        let isReady = false;
+        
+        async function initPyodide() {
+            if (!pyodide) {
+                console.log("Loading Pyodide...");
+                pyodide = await loadPyodide();
+                await pyodide.loadPackage(['numpy', 'matplotlib']);
+                isReady = true;
+                console.log("Pyodide ready!");
+            }
+            return pyodide;
+        }
+        
+        async function executeCode(code) {
+            if (!isReady) {
+                await initPyodide();
+            }
+            
+            try {
+                // Redirect stdout
+                pyodide.runPython(`
+import sys
+from io import StringIO
+sys.stdout = StringIO()
+sys.stderr = StringIO()
+                `);
+                
+                await pyodide.runPythonAsync(code);
+                const stdout = pyodide.runPython('sys.stdout.getvalue()');
+                const stderr = pyodide.runPython('sys.stderr.getvalue()');
+                
+                let output = stdout || stderr;
+                if (!output) {
+                    output = "✓ Execution completed (no output)";
+                }
+                
+                return output;
+            } catch(error) {
+                return `❌ Error: ${error.toString()}`;
+            }
+        }
+        
+        initPyodide();
+    </script>
+</body>
+</html>
