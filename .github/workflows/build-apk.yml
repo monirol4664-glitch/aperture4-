@@ -16,7 +16,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.9'  # Changed from 3.12 to 3.9
+        python-version: '3.9'
     
     - name: Install dependencies
       run: |
@@ -24,6 +24,25 @@ jobs:
         sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool
         pip install --upgrade pip
         pip install --upgrade cython buildozer
+    
+    - name: Manually download and setup Android NDK
+      run: |
+        # Create NDK directory
+        mkdir -p ~/.buildozer/android/platform/
+        cd ~/.buildozer/android/platform/
+        
+        # Download NDK r27 (valid, complete URL)
+        wget https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+        
+        # Extract it
+        unzip -q android-ndk-r27c-linux.zip
+        
+        # Rename to the expected folder name
+        mv android-ndk-r27c android-ndk-27.0.11902837
+        
+        # Set the environment variable for Buildozer
+        echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-27.0.11902837" >> $GITHUB_ENV
+        echo "ANDROID_NDK_VERSION=27.0.11902837" >> $GITHUB_ENV
     
     - name: Build APK
       run: |
