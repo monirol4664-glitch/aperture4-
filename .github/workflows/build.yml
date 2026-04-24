@@ -24,26 +24,45 @@ jobs:
         flutter-version: '3.19.0'
         channel: 'stable'
     
-    - name: Generate android folder only
+    - name: Create complete Flutter project with android folder
       run: |
-        # Backup your lib folder
-        cp -r lib lib_backup
+        # Save your existing files
+        cp -r lib lib_save
+        cp pubspec.yaml pubspec_save.yaml
         
-        # Create project in temp directory
+        # Create brand new Flutter project in a temp directory
         cd /tmp
-        flutter create --platforms=android temp_project
+        flutter create --platforms=android --org=com.yourapp myapp
         cd -
         
-        # Copy android folder from temp project
-        cp -r /tmp/temp_project/android ./
+        # Copy the entire android folder from the new project
+        cp -r /tmp/myapp/android .
         
-        # Restore your lib folder (overwriting default)
+        # Copy other necessary files
+        cp /tmp/myapp/build.gradle ./ 2>/dev/null || true
+        cp /tmp/myapp/settings.gradle ./ 2>/dev/null || true
+        
+        # Restore your app code
         rm -rf lib
-        cp -r lib_backup lib
+        cp -r lib_save lib
+        cp pubspec_save.yaml pubspec.yaml
         
-        # Create minimal necessary files
-        echo 'include ":app"' > android/settings.gradle
-        echo 'rootProject.buildDir = "../build"' > android/build.gradle
+        # Create local.properties
+        which flutter | xargs dirname | xargs dirname > /tmp/flutter_path
+        echo "flutter.sdk=$(cat /tmp/flutter_path)" > android/local.properties
+        
+        echo "✅ Project ready with android folder"
+    
+    - name: Verify structure
+      run: |
+        echo "Checking files:"
+        ls -la
+        echo ""
+        echo "Android folder:"
+        ls -la android/
+        echo ""
+        echo "Lib folder:"
+        ls -la lib/
     
     - name: Get dependencies
       run: flutter pub get
@@ -54,5 +73,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: jupyter-ide
+        name: app-release
         path: build/app/outputs/flutter-apk/app-release.apk
