@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Flutter APK with Embedded Python
 
 on:
   push:
@@ -24,45 +24,34 @@ jobs:
         flutter-version: '3.19.0'
         channel: 'stable'
     
-    - name: Create complete Flutter project with android folder
+    - name: Create Flutter project with android folder
       run: |
-        # Save your existing files
         cp -r lib lib_save
         cp pubspec.yaml pubspec_save.yaml
-        
-        # Create brand new Flutter project in a temp directory
         cd /tmp
         flutter create --platforms=android --org=com.yourapp myapp
         cd -
-        
-        # Copy the entire android folder from the new project
         cp -r /tmp/myapp/android .
-        
-        # Copy other necessary files
-        cp /tmp/myapp/build.gradle ./ 2>/dev/null || true
-        cp /tmp/myapp/settings.gradle ./ 2>/dev/null || true
-        
-        # Restore your app code
         rm -rf lib
         cp -r lib_save lib
         cp pubspec_save.yaml pubspec.yaml
-        
-        # Create local.properties
-        which flutter | xargs dirname | xargs dirname > /tmp/flutter_path
-        echo "flutter.sdk=$(cat /tmp/flutter_path)" > android/local.properties
-        
-        echo "✅ Project ready with android folder"
     
-    - name: Verify structure
+    - name: Auto-Configure Gradle for Chaquopy
       run: |
-        echo "Checking files:"
-        ls -la
-        echo ""
-        echo "Android folder:"
-        ls -la android/
-        echo ""
-        echo "Lib folder:"
-        ls -la lib/
+        # Add Chaquopy Maven repo to project-level build.gradle
+        sed -i '/mavenCentral()/a \        maven { url "https://chaquo.com/maven" }' android/build.gradle
+        sed -i '/dependencies {/a \        classpath "com.chaquo.python:gradle:14.0.2"' android/build.gradle
+        
+        # Apply Chaquopy plugin in app-level build.gradle
+        sed -i '/apply plugin: .com.android.application./a apply plugin: "com.chaquo.python"' android/app/build.gradle
+        
+        # Add Python configuration with NumPy (or any packages you want)
+        sed -i '/defaultConfig {/a \        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }\n        python {\n            buildPython "python3"\n            pip {\n                install "numpy"\n                install "pandas"\n            }\n        }' android/app/build.gradle
+    
+    - name: Set Android Manifest for Chaquopy
+      run: |
+        # Add PyApplication to AndroidManifest.xml
+        sed -i 's/android:label=/android:name="com.chaquo.python.android.PyApplication" android:label=/' android/app/src/main/AndroidManifest.xml
     
     - name: Get dependencies
       run: flutter pub get
@@ -73,5 +62,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-release
+        name: python-ide
         path: build/app/outputs/flutter-apk/app-release.apk
