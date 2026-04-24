@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/monokai-sublime.dart';
 
 class CodeEditor extends StatefulWidget {
   final String code;
@@ -18,7 +16,6 @@ class CodeEditor extends StatefulWidget {
 
 class _CodeEditorState extends State<CodeEditor> {
   late TextEditingController _controller;
-  final FocusNode _focusNode = FocusNode();
   
   final List<String> _pythonKeywords = [
     'def', 'class', 'import', 'from', 'as', 'if', 'elif', 'else',
@@ -26,9 +23,6 @@ class _CodeEditorState extends State<CodeEditor> {
     'except', 'finally', 'raise', 'with', 'lambda', 'and', 'or',
     'not', 'is', 'in', 'True', 'False', 'None', 'print', 'len',
     'range', 'str', 'int', 'float', 'list', 'dict', 'set', 'tuple',
-    'open', 'file', 'input', 'abs', 'sum', 'min', 'max', 'sorted',
-    'append', 'extend', 'insert', 'remove', 'pop', 'clear', 'index',
-    'count', 'sort', 'reverse', 'copy', 'keys', 'values', 'items',
   ];
   
   List<String> _suggestions = [];
@@ -39,13 +33,6 @@ class _CodeEditorState extends State<CodeEditor> {
     super.initState();
     _controller = TextEditingController(text: widget.code);
     _controller.addListener(_onTextChange);
-    _focusNode.addListener(_onFocusChange);
-  }
-  
-  void _onFocusChange() {
-    if (!_focusNode.hasFocus) {
-      setState(() => _showSuggestions = false);
-    }
   }
   
   void _onTextChange() {
@@ -61,7 +48,12 @@ class _CodeEditorState extends State<CodeEditor> {
       return;
     }
     
-    final currentWord = _getCurrentWord(text, cursorPos);
+    // Find current word
+    int start = cursorPos;
+    while (start > 0 && _isWordChar(text[start - 1])) {
+      start--;
+    }
+    final currentWord = text.substring(start, cursorPos);
     
     if (currentWord.length >= 2) {
       final matches = _pythonKeywords
@@ -70,33 +62,30 @@ class _CodeEditorState extends State<CodeEditor> {
       
       setState(() {
         _suggestions = matches.take(5).toList();
-        _showSuggestions = _suggestions.isNotEmpty && _focusNode.hasFocus;
+        _showSuggestions = matches.isNotEmpty;
       });
     } else {
       setState(() => _showSuggestions = false);
     }
   }
   
-  String _getCurrentWord(String text, int position) {
-    int start = position;
-    while (start > 0 && RegExp(r'[a-zA-Z0-9_]').hasMatch(text[start - 1])) {
-      start--;
-    }
-    return text.substring(start, position);
+  bool _isWordChar(String char) {
+    return RegExp(r'[a-zA-Z0-9_]').hasMatch(char);
   }
   
   void _insertSuggestion(String suggestion) {
     final text = _controller.text;
     final cursorPos = _controller.selection.baseOffset;
-    final currentWord = _getCurrentWord(text, cursorPos);
-    final startPos = cursorPos - currentWord.length;
     
-    final newText = text.substring(0, startPos) + 
-                    suggestion + 
-                    text.substring(cursorPos);
+    // Find start of current word
+    int start = cursorPos;
+    while (start > 0 && _isWordChar(text[start - 1])) {
+      start--;
+    }
     
+    final newText = text.substring(0, start) + suggestion + text.substring(cursorPos);
     _controller.text = newText;
-    _controller.selection = TextSelection.collapsed(offset: startPos + suggestion.length);
+    _controller.selection = TextSelection.collapsed(offset: start + suggestion.length);
     widget.onChanged(newText);
     setState(() => _showSuggestions = false);
   }
@@ -112,14 +101,19 @@ class _CodeEditorState extends State<CodeEditor> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey[700]!),
           ),
-          child: HighlightView(
-            _controller.text,
-            language: 'python',
-            theme: monokaiSublimeTheme,
-            textStyle: const TextStyle(
+          child: TextField(
+            controller: _controller,
+            maxLines: null,
+            style: const TextStyle(
               fontFamily: 'monospace',
               fontSize: 14,
-              height: 1.4,
+              color: Colors.white,
+            ),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(12),
+              hintText: '# Write Python code here',
+              hintStyle: TextStyle(color: Colors.grey),
             ),
           ),
         ),
@@ -155,7 +149,6 @@ class _CodeEditorState extends State<CodeEditor> {
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 }
