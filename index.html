@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Python Compiler</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐍 Offline Python Compiler</h1>
+            <div class="status" id="status">Initializing...</div>
+        </header>
+        
+        <div class="editor-container">
+            <div class="toolbar">
+                <button id="runBtn" onclick="runCode()">▶ Run Code</button>
+                <button id="clearBtn" onclick="clearOutput()">🗑 Clear Output</button>
+                <button id="resetBtn" onclick="resetCode()">⟳ Reset</button>
+                <div class="library-badge">
+                    📚 NumPy | Matplotlib | SciPy | Pandas
+                </div>
+            </div>
+            <textarea id="codeEditor"></textarea>
+        </div>
+        
+        <div class="output-container">
+            <div class="output-header">
+                <h3>Output</h3>
+                <button id="copyBtn" onclick="copyOutput()">📋 Copy</button>
+            </div>
+            <div id="output"></div>
+        </div>
+        
+        <div class="examples">
+            <h3>📝 Examples:</h3>
+            <button onclick="loadExample('basic')">Basic Math</button>
+            <button onclick="loadExample('numpy')">NumPy Array</button>
+            <button onclick="loadExample('matplotlib')">Matplotlib Plot</button>
+            <button onclick="loadExample('pandas')">Pandas DataFrame</button>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/python-hint.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
