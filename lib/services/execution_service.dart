@@ -14,52 +14,90 @@ class ExecutionService {
       if (trimmed.isEmpty) return '';
       
       // Mathematical expressions
-      if (trimmed.contains('+') || trimmed.contains('-') || 
-          trimmed.contains('*') || trimmed.contains('/')) {
-        try {
-          // Safe evaluation for math expressions
-          final result = _evaluateMath(trimmed);
-          if (result != null) return result.toString();
-        } catch (_) {}
-      }
-      
-      // Print statements - FIXED regex
-      if (trimmed.startsWith('print(')) {
-        // Handle print('text') and print("text")
-        if (trimmed.contains("'") || trimmed.contains('"')) {
-          final startQuote = trimmed.indexOf('\'') != -1 ? '\'' : '"';
-          final endQuote = startQuote;
-          final contentStart = trimmed.indexOf(startQuote) + 1;
-          final contentEnd = trimmed.indexOf(endQuote, contentStart);
-          if (contentStart > 0 && contentEnd > contentStart) {
-            return trimmed.substring(contentStart, contentEnd);
+      if (trimmed.contains('+') && !trimmed.contains('+=')) {
+        final parts = trimmed.split('+');
+        if (parts.length == 2) {
+          final a = double.tryParse(parts[0].trim());
+          final b = double.tryParse(parts[1].trim());
+          if (a != null && b != null) {
+            return (a + b).toString();
           }
         }
-        return "Printed successfully";
       }
       
-      // Variable assignments (simulated)
+      if (trimmed.contains('-') && trimmed.indexOf('-') > 0) {
+        final parts = trimmed.split('-');
+        if (parts.length == 2) {
+          final a = double.tryParse(parts[0].trim());
+          final b = double.tryParse(parts[1].trim());
+          if (a != null && b != null) {
+            return (a - b).toString();
+          }
+        }
+      }
+      
+      if (trimmed.contains('*')) {
+        final parts = trimmed.split('*');
+        if (parts.length == 2) {
+          final a = double.tryParse(parts[0].trim());
+          final b = double.tryParse(parts[1].trim());
+          if (a != null && b != null) {
+            return (a * b).toString();
+          }
+        }
+      }
+      
+      if (trimmed.contains('/')) {
+        final parts = trimmed.split('/');
+        if (parts.length == 2) {
+          final a = double.tryParse(parts[0].trim());
+          final b = double.tryParse(parts[1].trim());
+          if (a != null && b != null && b != 0) {
+            return (a / b).toString();
+          }
+        }
+      }
+      
+      // Print statements - simple version
+      if (trimmed.startsWith('print(') && trimmed.endsWith(')')) {
+        String content = trimmed.substring(6, trimmed.length - 1);
+        // Remove quotes if present
+        if (content.startsWith('"') && content.endsWith('"')) {
+          content = content.substring(1, content.length - 1);
+        }
+        if (content.startsWith("'") && content.endsWith("'")) {
+          content = content.substring(1, content.length - 1);
+        }
+        return content;
+      }
+      
+      // Variable assignments
       if (trimmed.contains('=') && !trimmed.contains('==')) {
         return "✓ Variable assigned";
       }
       
-      // List operations - FIXED
-      if (trimmed.startsWith('len(')) {
-        // Extract content inside len()
-        final startParen = trimmed.indexOf('(');
-        final endParen = trimmed.lastIndexOf(')');
-        if (startParen != -1 && endParen > startParen) {
-          final content = trimmed.substring(startParen + 1, endParen);
-          // Remove quotes if present
-          final cleanContent = content.replaceAll(RegExp(r'[\'"]'), '');
-          return cleanContent.length.toString();
+      // len() function
+      if (trimmed.startsWith('len(') && trimmed.endsWith(')')) {
+        String content = trimmed.substring(4, trimmed.length - 1);
+        // Remove quotes
+        if (content.startsWith('"') && content.endsWith('"')) {
+          content = content.substring(1, content.length - 1);
         }
-        return "0";
+        if (content.startsWith("'") && content.endsWith("'")) {
+          content = content.substring(1, content.length - 1);
+        }
+        return content.length.toString();
       }
       
       // String operations
-      if (trimmed.contains('.upper()') || trimmed.contains('.lower()')) {
-        return "String operation result";
+      if (trimmed.contains('.upper()')) {
+        String before = trimmed.split('.')[0];
+        return before.toUpperCase();
+      }
+      
+      if (trimmed.contains('.lower()')) {
+        String before = trimmed.split('.')[0];
+        return before.toLowerCase();
       }
       
       // Loop simulation
@@ -72,12 +110,6 @@ class ExecutionService {
         return "Function defined";
       }
       
-      // Handle print without quotes (variable print)
-      if (trimmed.startsWith('print(') && trimmed.contains(')')) {
-        final varName = trimmed.substring(6, trimmed.length - 1);
-        return "Value of '$varName' would print here";
-      }
-      
       // Default response
       if (trimmed.isNotEmpty) {
         return "✓ Code executed successfully";
@@ -88,49 +120,5 @@ class ExecutionService {
     } catch (e) {
       return 'Error: ${e.toString()}';
     }
-  }
-  
-  double? _evaluateMath(String expression) {
-    // Remove whitespace
-    expression = expression.replaceAll(' ', '');
-    
-    // Handle basic operations
-    if (expression.contains('+')) {
-      final parts = expression.split('+');
-      if (parts.length == 2) {
-        final a = double.tryParse(parts[0]);
-        final b = double.tryParse(parts[1]);
-        if (a != null && b != null) return a + b;
-      }
-    }
-    
-    if (expression.contains('-') && !expression.startsWith('-')) {
-      final parts = expression.split('-');
-      if (parts.length == 2) {
-        final a = double.tryParse(parts[0]);
-        final b = double.tryParse(parts[1]);
-        if (a != null && b != null) return a - b;
-      }
-    }
-    
-    if (expression.contains('*')) {
-      final parts = expression.split('*');
-      if (parts.length == 2) {
-        final a = double.tryParse(parts[0]);
-        final b = double.tryParse(parts[1]);
-        if (a != null && b != null) return a * b;
-      }
-    }
-    
-    if (expression.contains('/')) {
-      final parts = expression.split('/');
-      if (parts.length == 2) {
-        final a = double.tryParse(parts[0]);
-        final b = double.tryParse(parts[1]);
-        if (a != null && b != null && b != 0) return a / b;
-      }
-    }
-    
-    return null;
   }
 }
