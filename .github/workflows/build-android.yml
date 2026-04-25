@@ -1,0 +1,106 @@
+name: Build Android APK
+on:
+  push:
+    tags:
+      - 'v*'              # Triggers on version tags like v1.0.0
+    branches:
+      - main              # Also runs on main branch pushes
+  workflow_dispatch:       # Allows manual triggering
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Required for creating releases
+    
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Setup Java (required for Android build)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # 4. Install Android SDK (via Capacitor)
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 5. Install frontend dependencies
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # 6. Build the web app
+      - name: Build web application
+        run: |
+          cd frontend
+          npm run build
+
+      # 7. Install Capacitor globally
+      - name: Install Capacitor
+        run: |
+          npm install -g @capacitor/cli @capacitor/core
+          npm install @capacitor/android
+
+      # 8. Decode keystore from secrets
+      - name: Decode Keystore
+        env:
+          RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE }}
+        run: |
+          echo "$RELEASE_KEYSTORE" | base64 --decode > release.jks
+
+      # 9. Sync Capacitor with Android
+      - name: Capacitor Sync
+        run: |
+          npx cap sync android
+
+      # 10. Build signed APK
+      - name: Build Signed APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew assembleRelease
+          
+          # Sign the APK
+          cd app/build/outputs/apk/release/
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore ../../../../../release.jks \
+            -storepass $KEYSTORE_PASSWORD \
+            -keypass $KEY_PASSWORD \
+            app-release-unsigned.apk $KEY_ALIAS
+          
+          # Verify and align
+          ${ANDROID_HOME}/build-tools/33.0.0/zipalign -v -p 4 \
+            app-release-unsigned.apk app-release-signed.apk
+
+      # 11. Upload APK as artifact
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-notebook-apk
+          path: android/app/build/outputs/apk/release/app-release-signed.apk
+
+      # 12. Create GitHub Release
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: android/app/build/outputs/apk/release/app-release-signed.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
