@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Python IDE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #1e1e1e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        .toolbar {
+            background: #2d2d2d;
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #3e3e3e;
+            flex-shrink: 0;
+        }
+
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        button:active { transform: scale(0.96); opacity: 0.8; }
+        .run { background: #2ea043; }
+        .clear { background: #da3633; }
+        .plot { background: #6a0dad; }
+
+        .status {
+            background: #1e1e1e;
+            color: #89e051;
+            padding: 6px 12px;
+            font-family: monospace;
+            font-size: 11px;
+            margin-left: auto;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status.loading::before { content: "●"; color: #f0ad4e; font-size: 8px; animation: pulse 1s infinite; }
+        .status.ready::before { content: "●"; color: #2ea043; font-size: 8px; }
+        .status.error::before { content: "●"; color: #da3633; font-size: 8px; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+
+        .editor-header {
+            background: #2d2d2d;
+            padding: 8px 12px;
+            color: #ccc;
+            font-size: 11px;
+            font-weight: 600;
+            border-bottom: 1px solid #3e3e3e;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .clear-editor {
+            background: #da3633;
+            padding: 4px 12px;
+            font-size: 11px;
+        }
+
+        #editor-container {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .output-area {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            border-left: 1px solid #3e3e3e;
+            transition: width 0.25s ease;
+        }
+
+        .output-area.minimized {
+            width: 40px;
+            min-width: 40px;
+        }
+
+        .output-header {
+            background: #2d2d2d;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3e3e3e;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .output-header:hover { background: #3d3d3d; }
+
+        .output-title {
+            color: #ccc;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .minimize-btn {
+            background: none;
+            padding: 0;
+            font-size: 14px;
+            color: #ccc;
+            width: 28px;
+        }
+        .minimize-btn:active { transform: none; opacity: 0.7; }
+
+        .output-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #d4d4d4;
+        }
+
+        .output-area.minimized .output-content { display: none; }
+        .output-area.minimized .output-title { 
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            white-space: nowrap;
+            margin: 20px 0;
+        }
+
+        /* Custom autocomplete dropdown */
+        .custom-autocomplete {
+            position: fixed;
+            background: #252526;
+            border: 1px solid #3e3e3e;
+            border-radius: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            min-width: 280px;
+        }
+
+        .autocomplete-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            color: #cccccc;
+            font-family: 'Monaco', monospace;
+            font-size: 13px;
+            border-bottom: 1px solid #3e3e3e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background: #04395e;
+        }
+
+        .autocomplete-item.selected {
+            background: #04395e;
+        }
+
+        .autocomplete-word {
+            color: #89e051;
+            font-weight: 500;
+        }
+
+        .autocomplete-detail {
+            color: #858585;
+            font-size: 11px;
+        }
+
+        .plot-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            flex-direction: column;
+            animation: fadeIn 0.2s ease;
+        }
+        .plot-modal.active { display: flex; }
+
+        .plot-header {
+            background: #2d2d2d;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3e3e3e;
+            flex-shrink: 0;
+        }
+        .plot-header h3 { color: #89e051; font-size: 16px; font-weight: 500; }
+        .close-plot { background: #da3633; padding: 6px 16px; font-size: 14px; }
+
+        .plot-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow: auto;
+        }
+
+        #plotImage {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .plot-controls {
+            background: #2d2d2d;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-shrink: 0;
+            border-top: 1px solid #3e3e3e;
+        }
+
+        .plot-controls button { padding: 6px 16px; font-size: 12px; }
+
+        @media (max-width: 768px) {
+            .main { flex-direction: column; }
+            .editor-area { flex: 1; }
+            .output-area { width: 100%; height: 35%; border-left: none; border-top: 1px solid #3e3e3e; }
+            .output-area.minimized { height: 40px; width: 100%; }
+            .output-area.minimized .output-title { 
+                writing-mode: horizontal-tb;
+                transform: none;
+                margin: 0;
+            }
+            button { padding: 6px 12px; font-size: 12px; }
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #3e3e3e; border-radius: 2px; }
+
+        .error-text { color: #f85149; }
+        .success-text { color: #89e051; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="toolbar">
+            <button class="run" onclick="runCode()">▶ Run</button>
+            <button class="clear" onclick="clearOutput()">🗑 Clear Output</button>
+            <button class="plot" onclick="showPlot()">📊 Plot</button>
+            <button onclick="showHelp()">ℹ️ Help</button>
+            <div class="status loading" id="status">Starting...</div>
+        </div>
+
+        <div class="main">
+            <div class="editor-area">
+                <div class="editor-header">
+                    <span>📝 Code (Syntax Highlighting)</span>
+                    <button class="clear-editor" onclick="clearEditor()">✕ Clear Code</button>
+                </div>
+                <div id="editor-container"></div>
+            </div>
+
+            <div class="output-area" id="outputArea">
+                <div class="output-header" onclick="toggleOutput()">
+                    <span class="output-title">📤 Output</span>
+                    <button class="minimize-btn" id="minimizeBtn">▶</button>
+                </div>
+                <div class="output-content" id="output">Initializing Python with numpy & matplotlib...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="plot-modal" id="plotModal">
+        <div class="plot-header">
+            <h3>📊 Plot</h3>
+            <button class="close-plot" onclick="closePlot()">✕ Close</button>
+        </div>
+        <div class="plot-content">
+            <img id="plotImage" alt="Plot">
+        </div>
+        <div class="plot-controls">
+            <button onclick="zoomIn()">🔍 Zoom In</button>
+            <button onclick="zoomOut()">🔍 Zoom Out</button>
+            <button onclick="resetZoom()">⟳ Reset</button>
+            <button onclick="downloadPlot()">💾 Save</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <script>
+        let editor, pyodide, isReady = false;
+        let currentPlot = null;
+        let zoom = 1;
+        let outputMinimized = true;
+        let autocompleteDiv = null;
+
+        // Suggestion database
+        const suggestionDatabase = [
+            { word: 'print', type: 'function', desc: 'Print to console', snippet: 'print($1)' },
+            { word: 'def', type: 'keyword', desc: 'Define function', snippet: 'def $1($2):\n    $3' },
+            { word: 'class', type: 'keyword', desc: 'Define class', snippet: 'class $1:\n    def __init__(self):\n        $2' },
+            { word: 'import', type: 'keyword', desc: 'Import module', snippet: 'import $1' },
+            { word: 'from', type: 'keyword', desc: 'Import from', snippet: 'from $1 import $2' },
+            { word: 'return', type: 'keyword', desc: 'Return value', snippet: 'return $1' },
+            { word: 'if', type: 'keyword', desc: 'Conditional', snippet: 'if $1:\n    $2' },
+            { word: 'else', type: 'keyword', desc: 'Else', snippet: 'else:\n    $1' },
+            { word: 'elif', type: 'keyword', desc: 'Else if', snippet: 'elif $1:\n    $2' },
+            { word: 'for', type: 'keyword', desc: 'For loop', snippet: 'for $1 in $2:\n    $3' },
+            { word: 'while', type: 'keyword', desc: 'While loop', snippet: 'while $1:\n    $2' },
+            { word: 'break', type: 'keyword', desc: 'Break loop', snippet: 'break' },
+            { word: 'continue', type: 'keyword', desc: 'Continue loop', snippet: 'continue' },
+            { word: 'range', type: 'function', desc: 'Generate range', snippet: 'range($1)' },
+            { word: 'len', type: 'function', desc: 'Get length', snippet: 'len($1)' },
+            { word: 'type', type: 'function', desc: 'Get type', snippet: 'type($1)' },
+            { word: 'int', type: 'function', desc: 'Convert to int', snippet: 'int($1)' },
+            { word: 'str', type: 'function', desc: 'Convert to string', snippet: 'str($1)' },
+            { word: 'float', type: 'function', desc: 'Convert to float', snippet: 'float($1)' },
+            { word: 'list', type: 'function', desc: 'Create list', snippet: 'list($1)' },
+            { word: 'dict', type: 'function', desc: 'Create dict', snippet: 'dict($1)' },
+            { word: 'np', type: 'module', desc: 'NumPy module', snippet: 'np' },
+            { word: 'plt', type: 'module', desc: 'Matplotlib module', snippet: 'plt' },
+            { word: 'np.array', type: 'numpy', desc: 'Create array', snippet: 'np.array($1)' },
+            { word: 'np.linspace', type: 'numpy', desc: 'Linear space', snippet: 'np.linspace($1, $2, $3)' },
+            { word: 'np.mean', type: 'numpy', desc: 'Mean value', snippet: 'np.mean($1)' },
+            { word: 'np.std', type: 'numpy', desc: 'Std deviation', snippet: 'np.std($1)' },
+            { word: 'np.sin', type: 'numpy', desc: 'Sine', snippet: 'np.sin($1)' },
+            { word: 'np.cos', type: 'numpy', desc: 'Cosine', snippet: 'np.cos($1)' },
+            { word: 'plt.plot', type: 'matplotlib', desc: 'Plot data', snippet: 'plt.plot($1)' },
+            { word: 'plt.show', type: 'matplotlib', desc: 'Show plot', snippet: 'plt.show()' },
+            { word: 'plt.title', type: 'matplotlib', desc: 'Set title', snippet: 'plt.title("$1")' },
+            { word: 'plt.xlabel', type: 'matplotlib', desc: 'X-axis label', snippet: 'plt.xlabel("$1")' },
+            { word: 'plt.ylabel', type: 'matplotlib', desc: 'Y-axis label', snippet: 'plt.ylabel("$1")' },
+            { word: 'plt.grid', type: 'matplotlib', desc: 'Show grid', snippet: 'plt.grid(True)' },
+            { word: 'plt.legend', type: 'matplotlib', desc: 'Show legend', snippet: 'plt.legend()' },
+            { word: 'plt.figure', type: 'matplotlib', desc: 'Create figure', snippet: 'plt.figure(figsize=($1, $2))' }
+        ];
+
+        function toggleOutput() {
+            const area = document.getElementById('outputArea');
+            const btn = document.getElementById('minimizeBtn');
+            outputMinimized = !outputMinimized;
+            if (outputMinimized) {
+                area.classList.add('minimized');
+                btn.innerHTML = '▶';
+            } else {
+                area.classList.remove('minimized');
+                btn.innerHTML = '◀';
+            }
+        }
+
+        function clearEditor() {
+            if (editor) {
+                editor.setValue('');
+            }
+        }
+
+        // Create custom autocomplete dropdown
+        function createAutocomplete() {
+            const div = document.createElement('div');
+            div.className = 'custom-autocomplete';
+            div.style.display = 'none';
+            document.body.appendChild(div);
+            return div;
+        }
+
+        function showAutocomplete(suggestions, position, currentWord) {
+            if (!autocompleteDiv) {
+                autocompleteDiv = createAutocomplete();
+            }
+            
+            autocompleteDiv.innerHTML = '';
+            
+            suggestions.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerHTML = `
+                    <span class="autocomplete-word">${item.word}</span>
+                    <span class="autocomplete-detail">${item.type} - ${item.desc}</span>
+                `;
+                div.onclick = () => insertSuggestion(item, currentWord);
+                div.onmouseenter = () => {
+                    const items = autocompleteDiv.children;
+                    for (let i = 0; i < items.length; i++) {
+                        items[i].classList.remove('selected');
+                    }
+                    div.classList.add('selected');
+                };
+                autocompleteDiv.appendChild(div);
+            });
+            
+            autocompleteDiv.style.display = 'block';
+            autocompleteDiv.style.left = position.left + 'px';
+            autocompleteDiv.style.top = position.top + 'px';
+            
+            return autocompleteDiv;
+        }
+
+        function hideAutocomplete() {
+            if (autocompleteDiv) {
+                autocompleteDiv.style.display = 'none';
+            }
+        }
+
+        function insertSuggestion(suggestion, currentWord) {
+            if (!editor) return;
+            
+            const position = editor.getPosition();
+            const range = {
+                startLineNumber: position.lineNumber,
+                startColumn: position.column - currentWord.length,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column
+            };
+            
+            // Insert the snippet
+            editor.executeEdits('autocomplete', [{
+                range: range,
+                text: suggestion.snippet,
+                forceMoveMarkers: true
+            }]);
+            
+            editor.focus();
+            hideAutocomplete();
+        }
+
+        // Initialize Monaco Editor
+        function initEditor() {
+            require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+            
+            require(['vs/editor/editor.main'], function() {
+                editor = monaco.editor.create(document.getElementById('editor-container'), {
+                    value: `import numpy as np
+import matplotlib.pyplot as plt
+
+# Create data
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+print("Hello from Python!")
+print(f"NumPy: {np.__version__}")
+
+# Create plot
+plt.plot(x, y)
+plt.title("Sine Wave")
+plt.xlabel("x")
+plt.ylabel("sin(x)")
+plt.grid(True)
+plt.show()`,
+                    language: 'python',
+                    theme: 'vs-dark',
+                    fontSize: 14,
+                    automaticLayout: true,
+                    lineNumbers: 'on',
+                    wordWrap: 'on',
+                    minimap: { enabled: false },
+                    suggestOnTriggerCharacters: false,
+                    quickSuggestions: false
+                });
+                
+                // Custom autocomplete on key press
+                editor.onKeyUp((e) => {
+                    const position = editor.getPosition();
+                    const lineContent = editor.getModel().getLineContent(position.lineNumber);
+                    const textBeforeCursor = lineContent.substring(0, position.column - 1);
+                    
+                    // Get current word being typed
+                    const wordMatch = textBeforeCursor.match(/[a-zA-Z0-9_.]+$/);
+                    
+                    if (wordMatch && wordMatch[0].length >= 2) {
+                        const currentWord = wordMatch[0];
+                        const matches = suggestionDatabase.filter(s => 
+                            s.word.toLowerCase().startsWith(currentWord.toLowerCase())
+                        );
+                        
+                        if (matches.length > 0) {
+                            const coords = editor.getScrolledVisiblePosition(position);
+                            const editorDom = document.getElementById('editor-container');
+                            const rect = editorDom.getBoundingClientRect();
+                            
+                            showAutocomplete(matches, {
+                                left: rect.left + (coords?.left || 0) + 10,
+                                top: rect.top + (coords?.top || 0) + 25
+                            }, currentWord);
+                        } else {
+                            hideAutocomplete();
+                        }
+                    } else {
+                        hideAutocomplete();
+                    }
+                });
+                
+                // Handle keyboard navigation in autocomplete
+                editor.onKeyDown((e) => {
+                    if (autocompleteDiv && autocompleteDiv.style.display === 'block') {
+                        const items = autocompleteDiv.children;
+                        let currentIndex = -1;
+                        
+                        for (let i = 0; i < items.length; i++) {
+                            if (items[i].classList.contains('selected')) {
+                                currentIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        if (e.code === 'ArrowDown') {
+                            e.preventDefault();
+                            const newIndex = currentIndex + 1;
+                            if (newIndex < items.length) {
+                                for (let i = 0; i < items.length; i++) {
+                                    items[i].classList.remove('selected');
+                                }
+                                items[newIndex].classList.add('selected');
+                            }
+                        } else if (e.code === 'ArrowUp') {
+                            e.preventDefault();
+                            const newIndex = currentIndex - 1;
+                            if (newIndex >= 0) {
+                                for (let i = 0; i < items.length; i++) {
+                                    items[i].classList.remove('selected');
+                                }
+                                items[newIndex].classList.add('selected');
+                            }
+                        } else if (e.code === 'Enter' || e.code === 'Tab') {
+                            e.preventDefault();
+                            const selected = Array.from(items).find(item => item.classList.contains('selected'));
+                            if (selected) {
+                                const word = selected.querySelector('.autocomplete-word').textContent;
+                                const suggestion = suggestionDatabase.find(s => s.word === word);
+                                if (suggestion) {
+                                    const position = editor.getPosition();
+                                    const lineContent = editor.getModel().getLineContent(position.lineNumber);
+                                    const textBeforeCursor = lineContent.substring(0, position.column - 1);
+                                    const wordMatch = textBeforeCursor.match(/[a-zA-Z0-9_.]+$/);
+                                    if (wordMatch) {
+                                        insertSuggestion(suggestion, wordMatch[0]);
+                                    }
+                                }
+                            }
+                        } else if (e.code === 'Escape') {
+                            hideAutocomplete();
+                        }
+                    }
+                });
+            });
+        }
+
+        async function loadPython() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            
+            status.className = 'status loading';
+            status.innerHTML = 'Downloading...';
+            output.innerHTML = '⏳ First time setup (10-20 seconds)\nDownloading Python + numpy + matplotlib...\n\nThis happens only once!\n';
+            
+            try {
+                output.innerHTML += '📦 Loading runtime...\n';
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Network error'));
+                    document.head.appendChild(script);
+                    setTimeout(() => reject(new Error('Timeout')), 60000);
+                });
+                
+                output.innerHTML += '✓ Runtime loaded\n🐍 Initializing...\n';
+                pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' });
+                
+                output.innerHTML += '✓ Python ready\n📦 Installing numpy...\n';
+                status.innerHTML = 'numpy...';
+                await pyodide.loadPackage('numpy');
+                
+                output.innerHTML += '✓ numpy installed\n📦 Installing matplotlib...\n';
+                status.innerHTML = 'matplotlib...';
+                await pyodide.loadPackage('matplotlib');
+                
+                output.innerHTML += '✓ matplotlib installed\n🔧 Finalizing...\n';
+                
+                pyodide.runPython(`
+                    import sys, io, base64
+                    import matplotlib
+                    matplotlib.use('Agg')
+                    import matplotlib.pyplot as plt
+                    import numpy as np
+                    
+                    captured_plots = []
+                    
+                    def capture_plot(*args, **kwargs):
+                        buf = io.BytesIO()
+                        plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+                        buf.seek(0)
+                        captured_plots.append(base64.b64encode(buf.read()).decode())
+                        buf.close()
+                        plt.close()
+                        print("__PLOT__")
+                    
+                    plt.show = capture_plot
+                    
+                    sys.stdout_capture = io.StringIO()
+                    class Tee:
+                        def __init__(self, cap): self.cap = cap
+                        def write(self, t): self.cap.write(t)
+                        def flush(self): pass
+                    sys.stdout = Tee(sys.stdout_capture)
+                    
+                    print("="*40)
+                    print("✅ Python IDE Ready!")
+                    print(f"NumPy: {np.__version__}")
+                    print(f"Matplotlib: {matplotlib.__version__}")
+                    print("="*40)
+                `);
+                
+                const readyMsg = pyodide.runPython('sys.stdout_capture.getvalue()');
+                output.innerHTML = readyMsg;
+                
+                status.className = 'status ready';
+                status.innerHTML = 'Ready';
+                isReady = true;
+                
+            } catch (err) {
+                output.innerHTML += `\n<span class="error-text">❌ Error: ${err.message}</span>\n\nPlease check internet connection.`;
+                status.className = 'status error';
+                status.innerHTML = 'Error';
+            }
+        }
+
+        async function runCode() {
+            if (!isReady) {
+                document.getElementById('output').innerHTML = '⚠️ Loading Python. Please wait...';
+                return;
+            }
+            
+            const code = editor.getValue();
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            
+            status.className = 'status loading';
+            status.innerHTML = 'Running...';
+            
+            try {
+                pyodide.runPython(`
+                    import sys
+                    sys.stdout_capture = io.StringIO()
+                    sys.stdout = Tee(sys.stdout_capture)
+                    captured_plots = []
+                `);
+                
+                await pyodide.runPythonAsync(code);
+                
+                const stdout = pyodide.runPython('sys.stdout_capture.getvalue()');
+                const plots = pyodide.runPython('captured_plots');
+                
+                if (plots && plots.length) {
+                    currentPlot = plots[plots.length - 1];
+                    document.getElementById('plotImage').src = `data:image/png;base64,${currentPlot}`;
+                }
+                
+                output.innerHTML = stdout || '✓ Done';
+                status.className = 'status ready';
+                status.innerHTML = 'Ready';
+                
+            } catch (err) {
+                output.innerHTML = `<span class="error-text">❌ ${err.message}</span>`;
+                status.className = 'status error';
+                status.innerHTML = 'Error';
+                setTimeout(() => {
+                    status.className = 'status ready';
+                    status.innerHTML = 'Ready';
+                }, 2000);
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+            currentPlot = null;
+            closePlot();
+        }
+
+        function showPlot() {
+            if (currentPlot) {
+                document.getElementById('plotModal').classList.add('active');
+                resetZoom();
+            } else {
+                document.getElementById('output').innerHTML += '\n\n⚠️ No plot. Use plt.show()';
+            }
+        }
+
+        function closePlot() {
+            document.getElementById('plotModal').classList.remove('active');
+            resetZoom();
+        }
+
+        function zoomIn() { zoom = Math.min(zoom + 0.25, 3); updateZoom(); }
+        function zoomOut() { zoom = Math.max(zoom - 0.25, 0.5); updateZoom(); }
+        function resetZoom() { zoom = 1; updateZoom(); }
+        function updateZoom() { document.getElementById('plotImage').style.transform = `scale(${zoom})`; }
+        
+        function downloadPlot() {
+            if (currentPlot) {
+                const link = document.createElement('a');
+                link.download = 'plot.png';
+                link.href = `data:image/png;base64,${currentPlot}`;
+                link.click();
+            }
+        }
+
+        function showHelp() {
+            document.getElementById('output').innerHTML = `
+<span class="success-text">📖 Python IDE</span>
+════════════════════════
+
+✅ Syntax highlighting with Monaco Editor
+✅ numpy & matplotlib included
+✅ Custom autocomplete - start typing!
+   Try: pri, def, np., plt.
+✅ Use plt.show() for plots
+✅ Clear buttons for code and output
+
+Example:
+import numpy as np
+import matplotlib.pyplot as plt
+
+x = np.linspace(0, 10, 100)
+plt.plot(x, np.sin(x))
+plt.show()
+            `;
+        }
+
+        initEditor();
+        setTimeout(loadPython, 500);
+    </script>
+</body>
+</html>
